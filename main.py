@@ -5,7 +5,7 @@ A bullet-heaven style game built with Pygame
 
 import pygame
 import sys
-from src.game import Game
+from src.game_engine import Game
 from src.config import WindowConfig
 
 
