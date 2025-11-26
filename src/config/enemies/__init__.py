@@ -1,6 +1,6 @@
 """
 Enemy Configurations
-Import all enemy types here
 """
+from .base_enemy import BaseEnemyConfig, FastEnemyConfig, TankEnemyConfig
 
-from .base_enemy import *
+__all__ = ['BaseEnemyConfig', 'FastEnemyConfig', 'TankEnemyConfig']

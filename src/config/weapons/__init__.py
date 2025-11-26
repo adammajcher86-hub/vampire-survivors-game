@@ -1,6 +1,6 @@
 """
 Weapon Configurations
-Import all weapon types here
 """
+from .base_weapon import BaseWeaponConfig, SpreadWeaponConfig, LaserWeaponConfig
 
-from .base_weapon import *
+__all__ = ['BaseWeaponConfig', 'SpreadWeaponConfig', 'LaserWeaponConfig']
