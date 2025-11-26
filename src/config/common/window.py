@@ -2,6 +2,7 @@
 Window and Display Configuration
 """
 
+
 class WindowConfig:
     """Window and display settings"""
 

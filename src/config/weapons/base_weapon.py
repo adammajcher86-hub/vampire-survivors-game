@@ -2,6 +2,7 @@
 Base Weapon Configuration
 Weapon settings and variants
 """
+
 from ..common import Colors
 
 
@@ -27,6 +28,7 @@ class BaseWeaponConfig:
 
 class SpreadWeaponConfig(BaseWeaponConfig):
     """Spread weapon - fires multiple projectiles"""
+
     ATTACK_COOLDOWN = 1.5
     PROJECTILE_COUNT = 3
     SPREAD_ANGLE = 30
@@ -36,6 +38,7 @@ class SpreadWeaponConfig(BaseWeaponConfig):
 
 class LaserWeaponConfig(BaseWeaponConfig):
     """Laser weapon - fast, high damage, long cooldown"""
+
     ATTACK_COOLDOWN = 2.0
     PROJECTILE_SPEED = 500
     PROJECTILE_SIZE = 12
@@ -45,6 +48,7 @@ class LaserWeaponConfig(BaseWeaponConfig):
 
 class RapidFireConfig(BaseWeaponConfig):
     """Rapid fire weapon - low damage, high fire rate"""
+
     ATTACK_COOLDOWN = 0.3
     PROJECTILE_DAMAGE = 10
     PROJECTILE_SIZE = 6

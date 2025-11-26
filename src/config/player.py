@@ -2,6 +2,7 @@
 Player Configuration
 Player character settings
 """
+
 from .common import Colors
 
 

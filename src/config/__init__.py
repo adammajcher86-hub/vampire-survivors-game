@@ -4,7 +4,7 @@ Centralized game configuration
 
 Usage:
     from src.config import WindowConfig, Colors, PlayerConfig
-    
+
     screen = pygame.display.set_mode((WindowConfig.WIDTH, WindowConfig.HEIGHT))
     player_speed = PlayerConfig.SPEED
     bg_color = Colors.BACKGROUND
@@ -19,40 +19,32 @@ from .player import PlayerConfig
 from .spawn_manager import SpawnManagerConfig
 
 # Enemies
-from .enemies import (
-    BaseEnemyConfig, 
-    FastEnemyConfig, 
-    TankEnemyConfig,
-    EliteEnemyConfig
-)
+from .enemies import BaseEnemyConfig, FastEnemyConfig, TankEnemyConfig, EliteEnemyConfig
 
 # Weapons
 from .weapons import (
-    BaseWeaponConfig, 
-    SpreadWeaponConfig, 
+    BaseWeaponConfig,
+    SpreadWeaponConfig,
     LaserWeaponConfig,
-    RapidFireConfig
+    RapidFireConfig,
 )
 
 __all__ = [
     # Common
-    'WindowConfig',
-    'Colors',
-    
+    "WindowConfig",
+    "Colors",
     # Game
-    'GameConfig',
-    'PlayerConfig',
-    'SpawnManagerConfig',
-    
+    "GameConfig",
+    "PlayerConfig",
+    "SpawnManagerConfig",
     # Enemies
-    'BaseEnemyConfig',
-    'FastEnemyConfig',
-    'TankEnemyConfig',
-    'EliteEnemyConfig',
-    
+    "BaseEnemyConfig",
+    "FastEnemyConfig",
+    "TankEnemyConfig",
+    "EliteEnemyConfig",
     # Weapons
-    'BaseWeaponConfig',
-    'SpreadWeaponConfig',
-    'LaserWeaponConfig',
-    'RapidFireConfig',
+    "BaseWeaponConfig",
+    "SpreadWeaponConfig",
+    "LaserWeaponConfig",
+    "RapidFireConfig",
 ]

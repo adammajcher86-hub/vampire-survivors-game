@@ -2,6 +2,7 @@
 Vampire Survivors Clone - Main Entry Point
 A bullet-heaven style game built with Pygame
 """
+
 import pygame
 import sys
 from src.game import Game
