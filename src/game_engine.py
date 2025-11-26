@@ -1,12 +1,13 @@
 """
-Main Game Class
+Main Game Engine
 Manages game state, entities, and systems
 """
 
 import pygame
 from src.config import WindowConfig, Colors
-from src.entities.player import Player
+from src.entities import Player
 from src.camera import Camera
+from src.systems.enemy_spawner import EnemySpawner
 
 
 class Game:
@@ -29,6 +30,13 @@ class Game:
         # Entity groups
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
+
+        # Enemy management
+        self.enemies = pygame.sprite.Group()
+        self.enemy_spawner = EnemySpawner()
+
+        # Game stats
+        self.enemies_killed = 0
 
         print("Game initialized!")
         print(f"Window: {WindowConfig.WIDTH}x{WindowConfig.HEIGHT}")
@@ -64,6 +72,40 @@ class Game:
         # Update camera to follow player
         self.camera.update(self.player)
 
+        # Update enemy spawner
+        self.enemy_spawner.update(dt, self.player.position, self.enemies)
+
+        # Update all enemies
+        for enemy in self.enemies:
+            enemy.update(dt, self.player.position)
+
+        # Check enemy-player collision
+        self._check_enemy_collision(dt)
+
+        # Remove dead enemies
+        self._remove_dead_enemies()
+
+        # Check game over
+        if not self.player.is_alive():
+            print(
+                f"Game Over! Survived: {self.game_time:.1f}s, Killed: {self.enemies_killed}"
+            )
+            self.paused = True
+
+    def _check_enemy_collision(self, dt):
+        """Check and handle enemy collision with player"""
+        for enemy in self.enemies:
+            if enemy.collides_with(self.player):
+                # Enemy deals damage to player
+                self.player.take_damage(enemy.damage * dt)
+
+    def _remove_dead_enemies(self):
+        """Remove dead enemies and track kills"""
+        for enemy in list(self.enemies):
+            if enemy.is_dead:
+                self.enemies_killed += 1
+                self.enemies.remove(enemy)
+
     def render(self):
         """Render the game"""
         # Clear screen with background color
@@ -71,6 +113,10 @@ class Game:
 
         # Draw grid for reference
         self._draw_grid()
+
+        # Draw all enemies
+        for enemy in self.enemies:
+            enemy.render(self.screen, self.camera)
 
         # Draw player with camera offset
         self.player.render(self.screen, self.camera)
@@ -113,7 +159,8 @@ class Game:
             f"Time: {self.game_time:.1f}s",
             f"Pos: ({int(self.player.position.x)}, {int(self.player.position.y)})",
             f"HP: {int(self.player.health)}/{self.player.max_health}",
-            f"Speed: {int(self.player.velocity.length())}",
+            f"Enemies: {len(self.enemies)}",
+            f"Killed: {self.enemies_killed}",
         ]
 
         y_offset = 10
@@ -130,7 +177,14 @@ class Game:
         overlay.fill(Colors.BLACK)
         self.screen.blit(overlay, (0, 0))
 
-        # "PAUSED" text
+        # Check if game over
+        if not self.player.is_alive():
+            self._draw_game_over()
+        else:
+            self._draw_pause_text()
+
+    def _draw_pause_text(self):
+        """Draw paused text"""
         font = pygame.font.Font(None, 74)
         text = font.render("PAUSED", True, Colors.WHITE)
         text_rect = text.get_rect(
@@ -145,3 +199,26 @@ class Game:
             center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 + 60)
         )
         self.screen.blit(hint, hint_rect)
+
+    def _draw_game_over(self):
+        """Draw game over screen"""
+        font = pygame.font.Font(None, 74)
+        text = font.render("GAME OVER", True, Colors.RED)
+        text_rect = text.get_rect(
+            center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 - 50)
+        )
+        self.screen.blit(text, text_rect)
+
+        # Stats
+        small_font = pygame.font.Font(None, 36)
+        stats = [
+            f"Survived: {self.game_time:.1f}s",
+            f"Enemies Killed: {self.enemies_killed}",
+        ]
+
+        y_offset = WindowConfig.HEIGHT // 2 + 20
+        for stat in stats:
+            stat_text = small_font.render(stat, True, Colors.WHITE)
+            stat_rect = stat_text.get_rect(center=(WindowConfig.WIDTH // 2, y_offset))
+            self.screen.blit(stat_text, stat_rect)
+            y_offset += 40

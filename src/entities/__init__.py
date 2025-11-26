@@ -1,10 +1,20 @@
-import unittest
+"""
+Game Entities
+All game entities (player, enemies, projectiles, etc.)
+"""
 
+from .player import Player
+from .base_enemy import Enemy
+from .basic_enemy import BasicEnemy
+from .fast_enemy import FastEnemy
+from .tank_enemy import TankEnemy
+from .elite_enemy import EliteEnemy
 
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
-        self.assertEqual(True, False)  # add assertion here
-
-
-if __name__ == "__main__":
-    unittest.main()
+__all__ = [
+    "Player",
+    "Enemy",
+    "BasicEnemy",
+    "FastEnemy",
+    "TankEnemy",
+    "EliteEnemy",
+]
