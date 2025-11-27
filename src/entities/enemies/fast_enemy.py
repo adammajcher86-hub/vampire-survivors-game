@@ -3,7 +3,7 @@ Fast Enemy
 Quick, low-health enemy that moves faster than the player
 """
 
-from src.entities.base_enemy import Enemy
+from src.entities.enemies.base_enemy import Enemy
 from src.config import FastEnemyConfig
 
 

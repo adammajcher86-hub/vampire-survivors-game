@@ -5,9 +5,9 @@ Manages game state, entities, and systems
 
 import pygame
 from src.config import WindowConfig, Colors
-from src.entities import Player
+from src.entities import Player, BasicWeapon
 from src.camera import Camera
-from src.systems import EnemySpawner, WeaponSystem, XPSystem
+from src.systems import EnemySpawner, XPSystem
 
 
 class Game:
@@ -35,8 +35,8 @@ class Game:
         self.enemies = pygame.sprite.Group()
         self.enemy_spawner = EnemySpawner()
 
-        # Weapon and projectiles
-        self.weapon_system = WeaponSystem()
+        # Weapon system - POLYMORPHIC LIST!
+        self.weapons = [BasicWeapon()]  # Start with basic weapon
         self.projectiles = pygame.sprite.Group()
 
         # XP system
@@ -50,8 +50,8 @@ class Game:
         print(f"Window: {WindowConfig.WIDTH}x{WindowConfig.HEIGHT}")
         print(f"FPS: {WindowConfig.FPS}")
         print("Controls: WASD or Arrow Keys to move, ESC to pause")
-        print("Weapons auto-fire at nearest enemy!")
-        print("Collect XP orbs to level up!")
+        print("Starting weapon: Basic Weapon (auto-aim)")
+        print("Collect XP to level up!")
 
     def handle_event(self, event):
         """Handle game events"""
@@ -89,22 +89,19 @@ class Game:
         for enemy in self.enemies:
             enemy.update(dt, self.player.position)
 
-        # Update weapon system (auto-fire)
-        self.weapon_system.update(dt, self.player, self.enemies, self.projectiles)
+        # Update all weapons (POLYMORPHIC!)
+        for weapon in self.weapons:
+            weapon.update(dt, self.player, self.enemies, self.projectiles)
 
         # Update projectiles
         for projectile in self.projectiles:
             projectile.update(dt)
 
         # Check projectile-enemy collisions
-        enemies_killed = self.weapon_system.check_projectile_collisions(
-            self.projectiles, self.enemies
-        )
-        if enemies_killed > 0:
-            self.enemies_killed += enemies_killed
+        self._check_projectile_collisions()
 
         # Remove expired projectiles
-        self.weapon_system.remove_expired_projectiles(self.projectiles)
+        self._remove_expired_projectiles()
 
         # Update XP system
         self.xp_system.update(dt, self.player, self.xp_orbs)
@@ -121,6 +118,32 @@ class Game:
                 f"Game Over! Survived: {self.game_time:.1f}s, Killed: {self.enemies_killed}, Level: {self.xp_system.current_level}"
             )
             self.paused = True
+
+    def _check_projectile_collisions(self):
+        """Check and handle projectile-enemy collisions"""
+        for projectile in list(self.projectiles):
+            hit_enemy = False
+
+            for enemy in list(self.enemies):
+                if projectile.collides_with(enemy):
+                    # Damage enemy
+                    if enemy.take_damage(projectile.damage):
+                        # Enemy died
+                        self.enemies_killed += 1
+
+                    # Remove projectile
+                    self.projectiles.remove(projectile)
+                    hit_enemy = True
+                    break
+
+            if hit_enemy:
+                continue
+
+    def _remove_expired_projectiles(self):
+        """Remove projectiles that have exceeded their lifetime"""
+        for projectile in list(self.projectiles):
+            if projectile.is_expired():
+                self.projectiles.remove(projectile)
 
     def _check_enemy_collision(self, dt):
         """Check and handle enemy collision with player"""
@@ -265,6 +288,7 @@ class Game:
             f"Enemies: {len(self.enemies)}",
             f"Killed: {self.enemies_killed}",
             f"XP: {self.xp_system.current_xp}/{self.xp_system.xp_to_next_level}",
+            f"Weapons: {len(self.weapons)}",
         ]
 
         y_offset = 50  # Start below XP bar

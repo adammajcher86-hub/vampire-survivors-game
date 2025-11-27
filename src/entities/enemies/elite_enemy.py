@@ -3,7 +3,7 @@ Elite Enemy
 Balanced enemy with high XP value
 """
 
-from src.entities.base_enemy import Enemy
+from src.entities.enemies.base_enemy import Enemy
 from src.config import EliteEnemyConfig
 
 

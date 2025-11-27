@@ -3,7 +3,7 @@ Tank Enemy
 Slow, high-health enemy that deals heavy damage
 """
 
-from src.entities.base_enemy import Enemy
+from src.entities.enemies.base_enemy import Enemy
 from src.config import TankEnemyConfig
 
 

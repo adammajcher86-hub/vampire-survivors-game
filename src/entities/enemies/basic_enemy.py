@@ -3,7 +3,7 @@ Basic Enemy
 Standard enemy with balanced stats
 """
 
-from src.entities.base_enemy import Enemy
+from src.entities.enemies.base_enemy import Enemy
 from src.config import BaseEnemyConfig
 
 
