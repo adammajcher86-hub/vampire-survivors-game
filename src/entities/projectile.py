@@ -2,14 +2,17 @@
 Projectile Entity
 Bullets/projectiles fired by weapons
 """
+
 import pygame
-from src.config import Colors, BaseWeaponConfig
+from src.config import BaseWeaponConfig
 
 
 class Projectile(pygame.sprite.Sprite):
     """Projectile fired from weapons"""
 
-    def __init__(self, x, y, target_pos, damage=None, speed=None, color=None, size=None):
+    def __init__(
+        self, x, y, target_pos, damage=None, speed=None, color=None, size=None
+    ):
         """
         Initialize projectile
 
@@ -31,7 +34,9 @@ class Projectile(pygame.sprite.Sprite):
             direction = direction.normalize()
 
         # Properties
-        self.damage = damage if damage is not None else BaseWeaponConfig.PROJECTILE_DAMAGE
+        self.damage = (
+            damage if damage is not None else BaseWeaponConfig.PROJECTILE_DAMAGE
+        )
         self.speed = speed if speed is not None else BaseWeaponConfig.PROJECTILE_SPEED
         self.color = color if color is not None else BaseWeaponConfig.PROJECTILE_COLOR
         self.size = size if size is not None else BaseWeaponConfig.PROJECTILE_SIZE
@@ -88,8 +93,5 @@ class Projectile(pygame.sprite.Sprite):
 
         # Draw projectile as a circle
         pygame.draw.circle(
-            screen,
-            self.color,
-            (int(screen_pos.x), int(screen_pos.y)),
-            self.radius
+            screen, self.color, (int(screen_pos.x), int(screen_pos.y)), self.radius
         )

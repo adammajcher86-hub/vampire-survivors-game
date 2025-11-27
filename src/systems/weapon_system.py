@@ -2,7 +2,7 @@
 Weapon System
 Handles automatic weapon firing and targeting
 """
-import pygame
+
 from src.config import BaseWeaponConfig
 from src.entities.projectile import Projectile
 
@@ -60,7 +60,7 @@ class WeaponSystem:
                 damage=self.projectile_damage,
                 speed=self.projectile_speed,
                 color=self.projectile_color,
-                size=self.projectile_size
+                size=self.projectile_size,
             )
             projectiles.add(projectile)
 
