@@ -28,14 +28,3 @@ class SpawnManagerConfig:
     FAST_ENEMY_CHANCE = 0.15  # 15%
     TANK_ENEMY_CHANCE = 0.10  # 10%
     ELITE_ENEMY_CHANCE = 0.05  # 5%
-
-    @classmethod
-    def calculate_scaled_health(cls, base_health, difficulty_level):
-        """Calculate scaled health based on difficulty"""
-        return base_health * (cls.ENEMY_HEALTH_SCALE**difficulty_level)
-
-    @classmethod
-    def calculate_scaled_speed(cls, base_speed, difficulty_level):
-        """Calculate scaled speed based on difficulty (with cap)"""
-        scaled = base_speed * (cls.ENEMY_SPEED_SCALE**difficulty_level)
-        return min(scaled, base_speed * cls.MAX_SPEED_SCALE)
