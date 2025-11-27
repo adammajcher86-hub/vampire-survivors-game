@@ -36,7 +36,7 @@ vampire-survivors-game/
 ├── main.py           # Entry point
 ├── src/
 │   ├── config.py     # Game configuration
-│   ├── game.py       # Main game controller
+│   ├── game_engine.py       # Main game controller
 │   ├── entities/     # Game entities (Player, Enemy, etc.)
 │   ├── systems/      # Game systems (Spawning, Weapons, etc.)
 │   └── ui/           # User interface components

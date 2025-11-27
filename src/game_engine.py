@@ -2,12 +2,11 @@
 Main Game Engine
 Manages game state, entities, and systems
 """
-
 import pygame
 from src.config import WindowConfig, Colors
 from src.entities import Player
 from src.camera import Camera
-from src.systems.enemy_spawner import EnemySpawner
+from src.systems import EnemySpawner, WeaponSystem
 
 
 class Game:
@@ -35,13 +34,19 @@ class Game:
         self.enemies = pygame.sprite.Group()
         self.enemy_spawner = EnemySpawner()
 
+        # Weapon and projectiles
+        self.weapon_system = WeaponSystem()
+        self.projectiles = pygame.sprite.Group()
+
         # Game stats
         self.enemies_killed = 0
+        self.total_xp = 0
 
         print("Game initialized!")
         print(f"Window: {WindowConfig.WIDTH}x{WindowConfig.HEIGHT}")
         print(f"FPS: {WindowConfig.FPS}")
         print("Controls: WASD or Arrow Keys to move, ESC to pause")
+        print("Weapons auto-fire at nearest enemy!")
 
     def handle_event(self, event):
         """Handle game events"""
@@ -59,12 +64,8 @@ class Game:
 
         # Get player input
         keys = pygame.key.get_pressed()
-        dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (
-            keys[pygame.K_a] or keys[pygame.K_LEFT]
-        )
-        dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (
-            keys[pygame.K_w] or keys[pygame.K_UP]
-        )
+        dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (keys[pygame.K_a] or keys[pygame.K_LEFT])
+        dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (keys[pygame.K_w] or keys[pygame.K_UP])
 
         # Update player
         self.player.update(dt, dx, dy)
@@ -79,6 +80,22 @@ class Game:
         for enemy in self.enemies:
             enemy.update(dt, self.player.position)
 
+        # Update weapon system (auto-fire)
+        self.weapon_system.update(dt, self.player, self.enemies, self.projectiles)
+
+        # Update projectiles
+        for projectile in self.projectiles:
+            projectile.update(dt)
+
+        # Check projectile-enemy collisions
+        enemies_killed = self.weapon_system.check_projectile_collisions(self.projectiles, self.enemies)
+        if enemies_killed > 0:
+            self.enemies_killed += enemies_killed
+            # TODO: Drop XP orbs (next commit)
+
+        # Remove expired projectiles
+        self.weapon_system.remove_expired_projectiles(self.projectiles)
+
         # Check enemy-player collision
         self._check_enemy_collision(dt)
 
@@ -87,9 +104,7 @@ class Game:
 
         # Check game over
         if not self.player.is_alive():
-            print(
-                f"Game Over! Survived: {self.game_time:.1f}s, Killed: {self.enemies_killed}"
-            )
+            print(f"Game Over! Survived: {self.game_time:.1f}s, Killed: {self.enemies_killed}")
             self.paused = True
 
     def _check_enemy_collision(self, dt):
@@ -103,7 +118,7 @@ class Game:
         """Remove dead enemies and track kills"""
         for enemy in list(self.enemies):
             if enemy.is_dead:
-                self.enemies_killed += 1
+                # TODO: Create XP orb here (next commit)
                 self.enemies.remove(enemy)
 
     def render(self):
@@ -113,6 +128,10 @@ class Game:
 
         # Draw grid for reference
         self._draw_grid()
+
+        # Draw all projectiles
+        for projectile in self.projectiles:
+            projectile.render(self.screen, self.camera)
 
         # Draw all enemies
         for enemy in self.enemies:
@@ -141,14 +160,20 @@ class Game:
         for x in range(start_x, start_x + WindowConfig.WIDTH + grid_size, grid_size):
             screen_x = x - cam_x
             pygame.draw.line(
-                self.screen, Colors.GRAY, (screen_x, 0), (screen_x, WindowConfig.HEIGHT)
+                self.screen,
+                Colors.GRAY,
+                (screen_x, 0),
+                (screen_x, WindowConfig.HEIGHT)
             )
 
         # Draw horizontal lines
         for y in range(start_y, start_y + WindowConfig.HEIGHT + grid_size, grid_size):
             screen_y = y - cam_y
             pygame.draw.line(
-                self.screen, Colors.GRAY, (0, screen_y), (WindowConfig.WIDTH, screen_y)
+                self.screen,
+                Colors.GRAY,
+                (0, screen_y),
+                (WindowConfig.WIDTH, screen_y)
             )
 
     def _draw_debug_info(self):
@@ -161,6 +186,7 @@ class Game:
             f"HP: {int(self.player.health)}/{self.player.max_health}",
             f"Enemies: {len(self.enemies)}",
             f"Killed: {self.enemies_killed}",
+            f"Projectiles: {len(self.projectiles)}",
         ]
 
         y_offset = 10
@@ -187,26 +213,20 @@ class Game:
         """Draw paused text"""
         font = pygame.font.Font(None, 74)
         text = font.render("PAUSED", True, Colors.WHITE)
-        text_rect = text.get_rect(
-            center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2)
-        )
+        text_rect = text.get_rect(center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2))
         self.screen.blit(text, text_rect)
 
         # Hint text
         small_font = pygame.font.Font(None, 36)
         hint = small_font.render("Press ESC to continue", True, Colors.WHITE)
-        hint_rect = hint.get_rect(
-            center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 + 60)
-        )
+        hint_rect = hint.get_rect(center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 + 60))
         self.screen.blit(hint, hint_rect)
 
     def _draw_game_over(self):
         """Draw game over screen"""
         font = pygame.font.Font(None, 74)
         text = font.render("GAME OVER", True, Colors.RED)
-        text_rect = text.get_rect(
-            center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 - 50)
-        )
+        text_rect = text.get_rect(center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 - 50))
         self.screen.blit(text, text_rect)
 
         # Stats
