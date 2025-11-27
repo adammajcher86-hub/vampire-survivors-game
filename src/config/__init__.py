@@ -1,42 +1,42 @@
 """
-Configuration Package
+Configuration Module
 Centralized game configuration
-
-Usage:
-    from src.config import WindowConfig, Colors, PlayerConfig
-
-    screen = pygame.display.set_mode((WindowConfig.WIDTH, WindowConfig.HEIGHT))
-    player_speed = PlayerConfig.SPEED
-    bg_color = Colors.BACKGROUND
 """
 
-# Common configs (used everywhere)
-from .common import WindowConfig, Colors
+# Common configs
+from .common import Colors, WindowConfig
 
-# Game systems
+# Game config
 from .game import GameConfig
+
+# Player config
 from .player import PlayerConfig
-from .spawn_manager import SpawnManagerConfig
 
-# Enemies
-from .enemies import BaseEnemyConfig, FastEnemyConfig, TankEnemyConfig, EliteEnemyConfig
+# Enemy configs
+from .enemies import (
+    BaseEnemyConfig,
+    FastEnemyConfig,
+    TankEnemyConfig,
+    EliteEnemyConfig,
+)
 
-# Weapons
+# Weapon configs
 from .weapons import (
     BaseWeaponConfig,
-    SpreadWeaponConfig,
-    LaserWeaponConfig,
-    RapidFireConfig,
+    BasicWeaponConfig,
 )
+
+# Spawn manager
+from .spawn_manager import SpawnManagerConfig
 
 __all__ = [
     # Common
-    "WindowConfig",
     "Colors",
+    "WindowConfig",
     # Game
     "GameConfig",
+    # Player
     "PlayerConfig",
-    "SpawnManagerConfig",
     # Enemies
     "BaseEnemyConfig",
     "FastEnemyConfig",
@@ -44,7 +44,7 @@ __all__ = [
     "EliteEnemyConfig",
     # Weapons
     "BaseWeaponConfig",
-    "SpreadWeaponConfig",
-    "LaserWeaponConfig",
-    "RapidFireConfig",
+    "BasicWeaponConfig",
+    # Spawn
+    "SpawnManagerConfig",
 ]

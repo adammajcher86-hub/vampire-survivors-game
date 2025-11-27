@@ -15,9 +15,14 @@ from .enemies import (
     EliteEnemy,
 )
 
-# Import all weapons/projectiles from weapons subdirectory
+# Import all projectiles from projectiles subdirectory
+from .projectiles import (
+    BaseProjectile,
+    BasicProjectile,
+)
+
+# Import all weapons from weapons subdirectory
 from .weapons import (
-    Projectile,
     BaseWeapon,
     BasicWeapon,
 )
@@ -32,8 +37,10 @@ __all__ = [
     "FastEnemy",
     "TankEnemy",
     "EliteEnemy",
+    # Projectiles
+    "BaseProjectile",
+    "BasicProjectile",
     # Weapons
-    "Projectile",
     "BaseWeapon",
     "BasicWeapon",
 ]

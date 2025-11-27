@@ -4,8 +4,8 @@ Starting weapon - single auto-aim projectile
 """
 
 from src.entities.weapons.base_weapon import BaseWeapon
-from src.entities.weapons.projectile import Projectile
-from src.config import BaseWeaponConfig
+from src.entities.projectiles.basic_projectile import BasicProjectile
+from src.config import BasicWeaponConfig
 
 
 class BasicWeapon(BaseWeapon):
@@ -14,16 +14,16 @@ class BasicWeapon(BaseWeapon):
     def __init__(self):
         """Initialize basic weapon with default stats"""
         super().__init__(
-            cooldown=BaseWeaponConfig.ATTACK_COOLDOWN,
-            damage=BaseWeaponConfig.PROJECTILE_DAMAGE,
-            projectile_speed=BaseWeaponConfig.PROJECTILE_SPEED,
-            range=BaseWeaponConfig.RANGE,
+            cooldown=BasicWeaponConfig.ATTACK_COOLDOWN,
+            damage=BasicWeaponConfig.PROJECTILE_DAMAGE,
+            projectile_speed=BasicWeaponConfig.PROJECTILE_SPEED,
+            range=BasicWeaponConfig.RANGE,
             level=1,
         )
 
         # Visual properties
-        self.projectile_color = BaseWeaponConfig.PROJECTILE_COLOR
-        self.projectile_size = BaseWeaponConfig.PROJECTILE_SIZE
+        self.projectile_color = BasicWeaponConfig.PROJECTILE_COLOR
+        self.projectile_size = BasicWeaponConfig.PROJECTILE_SIZE
 
     def fire(self, player, target, projectiles):
         """
@@ -34,8 +34,8 @@ class BasicWeapon(BaseWeapon):
             target: Target enemy
             projectiles: Sprite group to add projectile to
         """
-        # Create projectile aimed at target
-        projectile = Projectile(
+        # Create basic projectile aimed at target
+        projectile = BasicProjectile(
             player.position.x,
             player.position.y,
             target.position,
