@@ -7,7 +7,8 @@ import pygame
 from src.config import WindowConfig, Colors
 from src.entities import Player, BasicWeapon
 from src.camera import Camera
-from src.systems import EnemySpawner, XPSystem
+from src.systems import EnemySpawner, XPSystem, UpgradeSystem
+from src.ui import UpgradeMenu
 
 
 class Game:
@@ -43,6 +44,10 @@ class Game:
         self.xp_system = XPSystem()
         self.xp_orbs = pygame.sprite.Group()
 
+        # Upgrade system
+        self.upgrade_system = UpgradeSystem()
+        self.upgrade_menu = UpgradeMenu()
+
         # Game stats
         self.enemies_killed = 0
 
@@ -55,6 +60,14 @@ class Game:
 
     def handle_event(self, event):
         """Handle game events"""
+        # Handle upgrade menu input first
+        if self.upgrade_menu.active:
+            selected_index = self.upgrade_menu.handle_input(event)
+            if selected_index is not None:
+                self._apply_upgrade(selected_index)
+                return  # Don't process other input while menu is active
+
+        # Normal game input
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 self.paused = not self.paused
@@ -104,7 +117,11 @@ class Game:
         self._remove_expired_projectiles()
 
         # Update XP system
-        self.xp_system.update(dt, self.player, self.xp_orbs)
+        leveled_up = self.xp_system.update(dt, self.player, self.xp_orbs)
+
+        # Show upgrade menu on level up
+        if leveled_up:
+            self._show_upgrade_menu()
 
         # Check enemy-player collision
         self._check_enemy_collision(dt)
@@ -196,9 +213,11 @@ class Game:
         if self.xp_system.level_up_flash:
             self._draw_level_up()
 
-        # Draw pause screen if paused
         if self.paused:
             self._draw_pause_screen()
+
+            # Draw upgrade menu (if active)
+        self.upgrade_menu.render(self.screen)
 
     def _draw_grid(self):
         """Draw background grid"""
@@ -351,3 +370,34 @@ class Game:
             stat_rect = stat_text.get_rect(center=(WindowConfig.WIDTH // 2, y_offset))
             self.screen.blit(stat_text, stat_rect)
             y_offset += 40
+
+    def _show_upgrade_menu(self):
+        """Show upgrade menu when player levels up"""
+        # Generate 3 random upgrade choices
+        choices = self.upgrade_system.generate_choices(
+            self.player, self.weapons, num_choices=3
+        )
+
+        # Show menu and pause game
+        self.upgrade_menu.show(choices)
+        self.paused = True
+        print("Level up! Upgrade menu shown.")
+
+    def _apply_upgrade(self, choice_index):
+        """
+        Apply selected upgrade
+
+        Args:
+            choice_index: Index of selected upgrade (0, 1, 2)
+        """
+        if choice_index < len(self.upgrade_menu.choices):
+            upgrade = self.upgrade_menu.choices[choice_index]
+            message = self.upgrade_system.apply_upgrade(
+                upgrade, self.player, self.weapons
+            )
+
+            print(f"Upgrade applied: {message}")
+
+        # Hide menu and resume game
+        self.upgrade_menu.hide()
+        self.paused = False
