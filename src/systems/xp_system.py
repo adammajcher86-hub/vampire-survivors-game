@@ -60,23 +60,30 @@ class XPSystem:
 
     def _collect_orbs(self, player, xp_orbs):
         """
-        Collect XP orbs that visually touch the player
+        Collect all pickups within range (polymorphic!)
 
         Args:
             player: Player entity
-            xp_orbs: Sprite group of XP orbs
+            xp_orbs: Sprite group of all pickups (XP, health, etc.)
 
         Returns:
             int: Total XP collected this frame
         """
         collected_xp = 0
 
-        for orb in list(xp_orbs):
-            # Use actual visual collision (orb radius + player radius)
-            distance = orb.position.distance_to(player.position)
-            if distance < (orb.radius + player.radius):  # ✅ Visual collision!
-                collected_xp += orb.xp_value
-                xp_orbs.remove(orb)
+        for pickup in list(xp_orbs):
+            # Use actual visual collision (pickup radius + player radius)
+            distance = pickup.position.distance_to(player.position)
+            if distance < (pickup.radius + player.radius):
+                # Polymorphic collection! Each pickup type handles itself
+                value = pickup.on_collect(player)
+
+                # Only count XP from XP orbs
+                if hasattr(pickup, "xp_value"):
+                    collected_xp += value
+
+                # Remove pickup
+                xp_orbs.remove(pickup)
 
         return collected_xp
 

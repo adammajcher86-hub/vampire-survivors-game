@@ -4,8 +4,10 @@ Manages game state, entities, and systems
 """
 
 import pygame
+import random
 from src.config import WindowConfig, Colors
 from src.entities import Player, BasicWeapon
+from src.entities.pickups import XPOrb, HealthPickup
 from src.camera import Camera
 from src.systems import EnemySpawner, XPSystem, UpgradeSystem
 from src.ui import UpgradeMenu
@@ -139,22 +141,28 @@ class Game:
     def _check_projectile_collisions(self):
         """Check and handle projectile-enemy collisions"""
         for projectile in list(self.projectiles):
-            hit_enemy = False
-
             for enemy in list(self.enemies):
                 if projectile.collides_with(enemy):
                     # Damage enemy
                     if enemy.take_damage(projectile.damage):
-                        # Enemy died
+                        # Enemy died - drop pickup
                         self.enemies_killed += 1
 
-                    # Remove projectile
-                    self.projectiles.remove(projectile)
-                    hit_enemy = True
-                    break
+                        # 90% XP orb, 10% health pickup
+                        if random.random() < 0.9:
+                            xp_orb = XPOrb(
+                                enemy.position.x, enemy.position.y, enemy.xp_value
+                            )
+                            self.xp_orbs.add(xp_orb)
+                        else:
+                            health_pickup = HealthPickup(
+                                enemy.position.x, enemy.position.y, heal_amount=20
+                            )
+                            self.xp_orbs.add(health_pickup)
 
-            if hit_enemy:
-                continue
+                    # Remove projectile (hit something, stop checking)
+                    self.projectiles.remove(projectile)
+                    break  # Move to next projectile
 
     def _remove_expired_projectiles(self):
         """Remove projectiles that have exceeded their lifetime"""
