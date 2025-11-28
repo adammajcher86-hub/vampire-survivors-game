@@ -1,14 +1,13 @@
 """
 XP System
-Manages experience collection and leveling
+Manages experience points and leveling
 """
 
 from src.config import GameConfig
-from src.entities.pickups.xp_orb import XPOrb
 
 
 class XPSystem:
-    """Manages XP collection and player leveling"""
+    """Manages XP tracking and player leveling"""
 
     def __init__(self):
         self.current_level = 1
@@ -20,27 +19,20 @@ class XPSystem:
         self.level_up_timer = 0.0
         self.level_up_duration = 2.0
 
-    def update(self, dt, player, xp_orbs):
+    def update(self, dt, collected_xp=0):
         """
         Update XP system
 
         Args:
             dt: Delta time in seconds
-            player: Player entity
-            xp_orbs: Sprite group of XP orbs
+            collected_xp: XP collected this frame (from PickupManager)
 
         Returns:
             bool: True if player leveled up this frame
         """
         leveled_up = False
 
-        # Update XP orbs (magnetic pull toward player)
-        for orb in xp_orbs:
-            orb.update(dt, player)
-
-        # Check orb collection
-        collected_xp = self._collect_orbs(player, xp_orbs)
-
+        # Add collected XP
         if collected_xp > 0:
             self.current_xp += collected_xp
 
@@ -57,35 +49,6 @@ class XPSystem:
                 self.level_up_timer = 0.0
 
         return leveled_up
-
-    def _collect_orbs(self, player, xp_orbs):
-        """
-        Collect all pickups within range (polymorphic!)
-
-        Args:
-            player: Player entity
-            xp_orbs: Sprite group of all pickups (XP, health, etc.)
-
-        Returns:
-            int: Total XP collected this frame
-        """
-        collected_xp = 0
-
-        for pickup in list(xp_orbs):
-            # Use actual visual collision (pickup radius + player radius)
-            distance = pickup.position.distance_to(player.position)
-            if distance < (pickup.radius + player.radius):
-                # Polymorphic collection! Each pickup type handles itself
-                value = pickup.on_collect(player)
-
-                # Only count XP from XP orbs
-                if hasattr(pickup, "xp_value"):
-                    collected_xp += value
-
-                # Remove pickup
-                xp_orbs.remove(pickup)
-
-        return collected_xp
 
     def _level_up(self):
         """Handle level up"""
@@ -108,20 +71,6 @@ class XPSystem:
         print(f"LEVEL UP! Now level {self.current_level}")
         print(f"XP to next level: {self.xp_to_next_level}")
 
-    def create_xp_orb(self, x, y, xp_value):
-        """
-        Create an XP orb at the given position
-
-        Args:
-            x: X position
-            y: Y position
-            xp_value: Amount of XP this orb gives
-
-        Returns:
-            XPOrb: The created XP orb
-        """
-        return XPOrb(x, y, xp_value)
-
     def get_xp_progress(self):
         """
         Get XP progress as a percentage
@@ -130,3 +79,13 @@ class XPSystem:
             float: Progress from 0.0 to 1.0
         """
         return self.current_xp / self.xp_to_next_level
+
+    def render(self, screen):
+        """
+        Render XP bar (if you have rendering logic)
+
+        Args:
+            screen: Pygame surface to draw on
+        """
+        # TODO: Add XP bar rendering if needed
+        pass

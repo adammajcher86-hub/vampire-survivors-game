@@ -7,9 +7,8 @@ import pygame
 import random
 from src.config import WindowConfig, Colors
 from src.entities import Player, BasicWeapon
-from src.entities.pickups import XPOrb, HealthPickup
 from src.camera import Camera
-from src.systems import EnemySpawner, XPSystem, UpgradeSystem
+from src.systems import EnemySpawner, XPSystem, UpgradeSystem, PickupManager
 from src.ui import UpgradeMenu
 
 
@@ -44,8 +43,8 @@ class Game:
 
         # XP system
         self.xp_system = XPSystem()
-        self.xp_orbs = pygame.sprite.Group()
-
+        self.pickups = pygame.sprite.Group()
+        self.pickup_manager = PickupManager()
         # Upgrade system
         self.upgrade_system = UpgradeSystem()
         self.upgrade_menu = UpgradeMenu()
@@ -118,8 +117,15 @@ class Game:
         # Remove expired projectiles
         self._remove_expired_projectiles()
 
-        # Update XP system
-        leveled_up = self.xp_system.update(dt, self.player, self.xp_orbs)
+        # Update all pickups (magnetic pull, animations)
+        for pickup in self.pickups:
+            pickup.update(dt, self.player)
+
+        # Collect pickups
+        collected_xp = self.pickup_manager.collect_pickups(self.player, self.pickups)
+
+        # Update XP system (returns True if leveled up)
+        leveled_up = self.xp_system.update(dt, collected_xp)
 
         # Show upgrade menu on level up
         if leveled_up:
@@ -150,15 +156,16 @@ class Game:
 
                         # 90% XP orb, 10% health pickup
                         if random.random() < 0.9:
-                            xp_orb = XPOrb(
-                                enemy.position.x, enemy.position.y, enemy.xp_value
+                            self.pickup_manager.spawn_xp_orb(
+                                enemy.position.x,
+                                enemy.position.y,
+                                enemy.xp_value,
+                                self.pickups,
                             )
-                            self.xp_orbs.add(xp_orb)
                         else:
-                            health_pickup = HealthPickup(
-                                enemy.position.x, enemy.position.y, heal_amount=20
+                            self.pickup_manager.spawn_health_pickup(
+                                enemy.position.x, enemy.position.y, 20, self.pickups
                             )
-                            self.xp_orbs.add(health_pickup)
 
                     # Remove projectile (hit something, stop checking)
                     self.projectiles.remove(projectile)
@@ -178,14 +185,18 @@ class Game:
                 self.player.take_damage(enemy.damage * dt)
 
     def _remove_dead_enemies(self):
-        """Remove dead enemies and drop XP orbs"""
+        """Remove dead enemies and drop pickups"""
         for enemy in list(self.enemies):
             if enemy.is_dead:
-                # Create XP orb at enemy position
-                xp_orb = self.xp_system.create_xp_orb(
-                    enemy.position.x, enemy.position.y, enemy.get_xp_value()
-                )
-                self.xp_orbs.add(xp_orb)
+                # Drop pickup (90% XP, 10% health)
+                if random.random() < 0.9:
+                    self.pickup_manager.spawn_xp_orb(
+                        enemy.position.x, enemy.position.y, enemy.xp_value, self.pickups
+                    )
+                else:
+                    self.pickup_manager.spawn_health_pickup(
+                        enemy.position.x, enemy.position.y, 20, self.pickups
+                    )
 
                 # Remove enemy
                 self.enemies.remove(enemy)
@@ -198,9 +209,9 @@ class Game:
         # Draw grid for reference
         self._draw_grid()
 
-        # Draw all XP orbs
-        for orb in self.xp_orbs:
-            orb.render(self.screen, self.camera)
+        # Draw all pickups (XP orbs, health, etc.)
+        for pickup in self.pickups:
+            pickup.render(self.screen, self.camera)
 
         # Draw all projectiles
         for projectile in self.projectiles:
