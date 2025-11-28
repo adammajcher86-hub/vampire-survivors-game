@@ -1,53 +1,47 @@
 """
-XP Orb Entity
-Experience orbs dropped by enemies
+XP Orb Pickup
+Green orb that gives XP and chases the player
 """
 
 import pygame
-from src.config import Colors, GameConfig
+from src.entities.pickups.base_pickup import BasePickup
+from src.config import Colors
 
 
-class XPOrb(pygame.sprite.Sprite):
-    """Experience orb that can be collected by the player"""
+class XPOrb(BasePickup):
+    """XP orb that chases player and gives XP on collection"""
 
-    def __init__(self, x, y, xp_value):
+    def __init__(self, x, y, xp_value=1):
         """
         Initialize XP orb
 
         Args:
-            x: Initial x position
-            y: Initial y position
+            x: Starting x position
+            y: Starting y position
             xp_value: Amount of XP this orb gives
         """
-        super().__init__()
-        self.position = pygame.math.Vector2(x, y)
+        super().__init__(x, y, radius=8)
+
+        # XP value
         self.xp_value = xp_value
 
         # Visual properties
-        self.size = 8
-        self.radius = self.size // 2
         self.color = Colors.CYAN
 
-        # Animation (pulse effect)
+        # Animation
         self.pulse_timer = 0.0
         self.pulse_speed = 3.0
 
-        # For sprite collision
-        self.rect = pygame.Rect(0, 0, self.size, self.size)
-        self.rect.center = (int(self.position.x), int(self.position.y))
-
-        # Collection range (will move toward player when close)
-        self.collection_range = GameConfig.PICKUP_RANGE
-        self.magnetic = False
-        self.magnetic_speed = 200
+        # Movement
+        self.magnetic_speed = 200.0
 
     def update(self, dt, player):
         """
-        Update XP orb state with acceleration
+        Update XP orb with acceleration toward player
 
         Args:
             dt: Delta time in seconds
-            player: Player entity (to get position and pickup range)
+            player: Player entity
         """
         # Update pulse animation
         self.pulse_timer += dt * self.pulse_speed
@@ -75,19 +69,6 @@ class XPOrb(pygame.sprite.Sprite):
         # Update rect for collision
         self.rect.center = (int(self.position.x), int(self.position.y))
 
-    def collides_with(self, entity):
-        """
-        Check collision with an entity (player)
-
-        Args:
-            entity: Entity to check collision with
-
-        Returns:
-            bool: True if colliding
-        """
-        distance = self.position.distance_to(entity.position)
-        return distance < (self.radius + entity.radius)
-
     def render(self, screen, camera):
         """
         Draw the XP orb with pulse effect
@@ -105,6 +86,7 @@ class XPOrb(pygame.sprite.Sprite):
         pulse_radius = int(self.radius * pulse_scale)
 
         # Draw outer glow (semi-transparent)
+        """
         glow_surface = pygame.Surface(
             (pulse_radius * 4, pulse_radius * 4), pygame.SRCALPHA
         )
@@ -117,7 +99,7 @@ class XPOrb(pygame.sprite.Sprite):
         screen.blit(
             glow_surface,
             (screen_pos.x - pulse_radius * 2, screen_pos.y - pulse_radius * 2),
-        )
+        )"""
 
         # Draw main orb
         pygame.draw.circle(
@@ -131,3 +113,15 @@ class XPOrb(pygame.sprite.Sprite):
             (int(screen_pos.x), int(screen_pos.y)),
             max(1, pulse_radius // 2),
         )
+
+    def on_collect(self, player):
+        """
+        Called when player collects this orb
+
+        Args:
+            player: Player entity
+
+        Returns:
+            int: XP value given to player
+        """
+        return self.xp_value

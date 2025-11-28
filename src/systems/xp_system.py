@@ -4,7 +4,7 @@ Manages experience collection and leveling
 """
 
 from src.config import GameConfig
-from src.entities.xp_orb import XPOrb
+from src.entities.pickups.xp_orb import XPOrb
 
 
 class XPSystem:

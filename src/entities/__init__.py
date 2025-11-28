@@ -4,7 +4,7 @@ All game entities (player, enemies, projectiles, weapons, etc.)
 """
 
 from .player import Player
-from .xp_orb import XPOrb
+from .pickups import XPOrb  # ✅ Changed from .xp_orb
 
 # Import all enemies from enemies subdirectory
 from .enemies import (
