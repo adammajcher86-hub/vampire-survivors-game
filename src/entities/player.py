@@ -20,6 +20,8 @@ class Player(pygame.sprite.Sprite):
         self.health = self.max_health
         self.speed = PlayerConfig.SPEED
         self.health_regen = PlayerConfig.HEALTH_REGEN
+        self.attack_speed_multiplier = 1.0
+        self.hp_regen = 0.5
 
         # Visual properties
         self.size = PlayerConfig.SIZE
@@ -29,6 +31,7 @@ class Player(pygame.sprite.Sprite):
         # For sprite collision
         self.rect = pygame.Rect(0, 0, self.size, self.size)
         self.rect.center = (int(self.position.x), int(self.position.y))
+        self.xp_pickup_range = 50.0
 
     def update(self, dt, dx, dy):
         """Update player state"""
@@ -45,8 +48,8 @@ class Player(pygame.sprite.Sprite):
             self.velocity = pygame.math.Vector2(0, 0)
 
         # Health regeneration
-        self.health = min(self.max_health, self.health + self.health_regen * dt)
-
+        if self.hp_regen > 0:
+            self.health = min(self.health + self.hp_regen * dt, self.max_health)
         # Update rect for collision
         self.rect.center = (int(self.position.x), int(self.position.y))
 

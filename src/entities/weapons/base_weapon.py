@@ -40,12 +40,12 @@ class BaseWeapon(ABC):
             projectiles: Sprite group to add new projectiles to
         """
         # Update cooldown
-        self.cooldown_timer += dt
+        self.cooldown_timer -= dt * player.attack_speed_multiplier
 
-        # Check if ready to fire
-        if self.cooldown_timer >= self.cooldown:
+        # Check if ready to fire (timer reached 0 or below)
+        if self.cooldown_timer <= 0:
             if self._try_fire(player, enemies, projectiles):
-                self.cooldown_timer = 0.0
+                self.cooldown_timer = self.cooldown
 
     def _try_fire(self, player, enemies, projectiles):
         """

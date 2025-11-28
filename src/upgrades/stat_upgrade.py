@@ -73,4 +73,7 @@ class StatUpgrade(BaseUpgrade):
 
         setattr(player, self.stat_attribute, new_value)
 
-        return f"{self.stat_name} increased! ({old_value:.0f} → {new_value:.0f})"
+        if self.is_percentage or abs(new_value) < 10:
+            return f"{self.stat_name} increased! ({old_value:.2f} → {new_value:.2f})"
+        else:
+            return f"{self.stat_name} increased! ({old_value:.0f} → {new_value:.0f})"

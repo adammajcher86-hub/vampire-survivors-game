@@ -41,26 +41,36 @@ class XPOrb(pygame.sprite.Sprite):
         self.magnetic = False
         self.magnetic_speed = 200
 
-    def update(self, dt, player_position):
+    def update(self, dt, player):
         """
-        Update XP orb state
+        Update XP orb state with acceleration
 
         Args:
             dt: Delta time in seconds
-            player_position: Vector2 of player position
+            player: Player entity (to get position and pickup range)
         """
         # Update pulse animation
         self.pulse_timer += dt * self.pulse_speed
 
         # Check if player is close enough for magnetic pull
-        distance = self.position.distance_to(player_position)
+        distance = self.position.distance_to(player.position)
 
-        if distance < self.collection_range:
-            # Move toward player
-            direction = player_position - self.position
+        # Chase at 2x the pickup range
+        chase_distance = player.xp_pickup_range * 2
+
+        if distance < chase_distance:
+            # Calculate acceleration based on distance
+            # Closer = faster! (1x at edge, up to 5x when very close)
+            distance_ratio = distance / chase_distance  # 1.0 at edge, 0.0 at center
+            speed_multiplier = 1.0 + (4.0 * (1.0 - distance_ratio))  # 1x to 5x
+
+            current_speed = self.magnetic_speed * speed_multiplier
+
+            # Move toward player with accelerating speed
+            direction = player.position - self.position
             if direction.length() > 0:
                 direction = direction.normalize()
-                self.position += direction * self.magnetic_speed * dt
+                self.position += direction * current_speed * dt
 
         # Update rect for collision
         self.rect.center = (int(self.position.x), int(self.position.y))

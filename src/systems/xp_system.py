@@ -36,7 +36,7 @@ class XPSystem:
 
         # Update XP orbs (magnetic pull toward player)
         for orb in xp_orbs:
-            orb.update(dt, player.position)
+            orb.update(dt, player)
 
         # Check orb collection
         collected_xp = self._collect_orbs(player, xp_orbs)
@@ -60,7 +60,7 @@ class XPSystem:
 
     def _collect_orbs(self, player, xp_orbs):
         """
-        Collect XP orbs that touch the player
+        Collect XP orbs that visually touch the player
 
         Args:
             player: Player entity
@@ -72,7 +72,9 @@ class XPSystem:
         collected_xp = 0
 
         for orb in list(xp_orbs):
-            if orb.collides_with(player):
+            # Use actual visual collision (orb radius + player radius)
+            distance = orb.position.distance_to(player.position)
+            if distance < (orb.radius + player.radius):  # ✅ Visual collision!
                 collected_xp += orb.xp_value
                 xp_orbs.remove(orb)
 

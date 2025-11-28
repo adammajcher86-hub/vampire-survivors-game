@@ -30,12 +30,22 @@ class UpgradeSystem:
                 StatUpgrade(
                     "Pickup Range",
                     "xp_pickup_range",
-                    20,
+                    10,
                     is_percentage=False,
                     icon="🧲",
                 ),
                 StatUpgrade(
                     "Max Health", "max_health", 20, is_percentage=False, icon="❤️"
+                ),
+                StatUpgrade(
+                    "Attack Speed",
+                    "attack_speed_multiplier",
+                    0.15,
+                    is_percentage=True,
+                    icon="⚡",
+                ),
+                StatUpgrade(
+                    "HP Regen", "hp_regen", 0.3, is_percentage=False, icon="💚"
                 ),
             ]
         )
