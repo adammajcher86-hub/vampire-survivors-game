@@ -26,9 +26,10 @@ python main.py
 
 ## Controls
 
-- **WASD** or **Arrow Keys** - Move
+- **WASD** - Move
 - **ESC** - Pause
-- **SPACE** - Level up (when available)
+- **SPACE** - dash
+- upgrade 1-3 keys
 
 ## Project Structure
 ```
