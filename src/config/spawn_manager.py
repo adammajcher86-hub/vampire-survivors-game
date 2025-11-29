@@ -8,7 +8,7 @@ class SpawnManagerConfig:
     """Enemy spawning and difficulty settings"""
 
     # Spawn rates
-    INITIAL_SPAWN_RATE = 5
+    INITIAL_SPAWN_RATE = 0.5
     MIN_SPAWN_RATE = 0.3
     SPAWN_RATE_DECREASE = 0.95
     MAX_ENEMIES = 500

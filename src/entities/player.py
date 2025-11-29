@@ -33,23 +33,64 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (int(self.position.x), int(self.position.y))
         self.xp_pickup_range = 50.0
 
+        self.max_stamina = 100.0
+        self.stamina = 30
+        self.stamina_regen = 5.0  # per second
+
+        # Dash mechanics - NEW!
+        self.dash_cost = 30.0
+        self.dash_speed = 800.0  # Much faster than normal speed
+        self.dash_duration = 0.2  # 0.2 seconds
+        self.dash_cooldown_time = 0.5  # Can dash again after 0.5 sec
+
+        # Dash state
+        self.is_dashing = False
+        self.dash_timer = 0.0
+        self.dash_cooldown = 0.0
+        self.dash_direction = pygame.math.Vector2(0, 0)
+        self.invulnerable = False  # Brief invincibility during dash
+
     def update(self, dt, dx, dy):
         """Update player state"""
-        # Movement
-        if dx != 0 or dy != 0:
-            # Normalize diagonal movement
-            direction = pygame.math.Vector2(dx, dy)
-            if direction.length() > 0:
-                direction = direction.normalize()
 
-            self.velocity = direction * self.speed
-            self.position += self.velocity * dt
+        # Update dash cooldown
+        if self.dash_cooldown > 0:
+            self.dash_cooldown -= dt
+
+        # Handle dashing
+        if self.is_dashing:
+            self.dash_timer -= dt
+
+            if self.dash_timer <= 0:
+                # Dash ended
+                self.is_dashing = False
+                self.invulnerable = False
+                self.dash_cooldown = self.dash_cooldown_time
+                self.velocity = pygame.math.Vector2(0, 0)
+            else:
+                # Continue dash movement
+                self.velocity = self.dash_direction * self.dash_speed
+                self.position += self.velocity * dt
         else:
-            self.velocity = pygame.math.Vector2(0, 0)
+            # Normal movement
+            if dx != 0 or dy != 0:
+                # Normalize diagonal movement
+                direction = pygame.math.Vector2(dx, dy)
+                if direction.length() > 0:
+                    direction = direction.normalize()
+
+                self.velocity = direction * self.speed
+                self.position += self.velocity * dt
+            else:
+                self.velocity = pygame.math.Vector2(0, 0)
 
         # Health regeneration
         if self.hp_regen > 0:
             self.health = min(self.health + self.hp_regen * dt, self.max_health)
+
+        # Stamina regeneration
+        self.stamina = min(self.stamina + self.stamina_regen * dt, self.max_stamina)
+
         # Update rect for collision
         self.rect.center = (int(self.position.x), int(self.position.y))
 
@@ -87,3 +128,40 @@ class Player(pygame.sprite.Sprite):
                 (int(end_pos.x), int(end_pos.y)),
                 3,
             )
+
+
+    def try_dash(self, dx, dy):
+        """
+        Attempt to dash in direction
+
+        Args:
+            dx: X direction (-1, 0, 1)
+            dy: Y direction (-1, 0, 1)
+
+        Returns:
+            bool: True if dash started
+        """
+        # Can't dash if already dashing or on cooldown
+        if self.is_dashing or self.dash_cooldown > 0:
+            return False
+
+        # Need stamina
+        if self.stamina < self.dash_cost:
+            return False
+
+        # Need a direction
+        if dx == 0 and dy == 0:
+            return False
+
+        # Start dash!
+        self.stamina -= self.dash_cost
+        self.is_dashing = True
+        self.dash_timer = self.dash_duration
+        self.invulnerable = True
+
+        # Normalize dash direction
+        self.dash_direction = pygame.math.Vector2(dx, dy)
+        if self.dash_direction.length() > 0:
+            self.dash_direction = self.dash_direction.normalize()
+
+        return True

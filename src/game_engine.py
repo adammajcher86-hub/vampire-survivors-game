@@ -65,10 +65,26 @@ class Game:
             selected_index = self.upgrade_menu.handle_input(event)
             if selected_index is not None:
                 self._apply_upgrade(selected_index)
-                return  # Don't process other input while menu is active
+                return
 
         # Normal game input
         if event.type == pygame.KEYDOWN:
+            # Dash with Spacebar - NEW!
+            if event.key == pygame.K_SPACE:
+                # Get current movement direction
+                keys = pygame.key.get_pressed()
+                dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (
+                        keys[pygame.K_a] or keys[pygame.K_LEFT]
+                )
+                dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (
+                        keys[pygame.K_w] or keys[pygame.K_UP]
+                )
+
+                # Try to dash
+                self.player.try_dash(dx, dy)
+
+
+            # Pause
             if event.key == pygame.K_ESCAPE:
                 self.paused = not self.paused
                 print(f"Game {'paused' if self.paused else 'resumed'}")
@@ -167,7 +183,9 @@ class Game:
         for enemy in self.enemies:
             if enemy.collides_with(self.player):
                 # Enemy deals damage to player
-                self.player.take_damage(enemy.damage * dt)
+                if not self.player.invulnerable:
+                    damage = enemy.damage * dt
+                    self.player.take_damage(damage)
 
     def render(self):
         """Render the game"""
@@ -195,6 +213,7 @@ class Game:
         # Draw UI (XP bar, debug info)
         self._draw_xp_bar()
         self._draw_debug_info()
+        self._render_resource_bars()
 
         # Draw level up notification
         if self.xp_system.level_up_flash:
@@ -388,3 +407,60 @@ class Game:
         # Hide menu and resume game
         self.upgrade_menu.hide()
         self.paused = False
+
+
+    def _render_resource_bars(self):
+        """Render health and stamina bars"""
+        bar_width = 300
+        bar_height = 25
+        bar_x = 490  # Left side of screen
+        bar_y = 35
+        spacing = 30
+
+        # Health Bar
+        pygame.draw.rect(
+            self.screen, (50, 50, 50),
+            (bar_x, bar_y, bar_width, bar_height)
+        )
+        health_percent = self.player.health / self.player.max_health
+        health_width = int(bar_width * health_percent)
+        pygame.draw.rect(
+            self.screen, Colors.RED,
+            (bar_x, bar_y, health_width, bar_height)
+        )
+        pygame.draw.rect(
+            self.screen, Colors.WHITE,
+            (bar_x, bar_y, bar_width, bar_height), 2
+        )
+
+        # Health text
+        health_font = pygame.font.Font(None, 24)
+        health_text = health_font.render(
+            f"HP: {int(self.player.health)}/{int(self.player.max_health)}",
+            True, Colors.WHITE
+        )
+        self.screen.blit(health_text, (bar_x + 5, bar_y + 3))
+
+        # Stamina Bar
+        stamina_y = bar_y + spacing
+        pygame.draw.rect(
+            self.screen, (50, 50, 50),
+            (bar_x, stamina_y, bar_width, bar_height)
+        )
+        stamina_percent = self.player.stamina / self.player.max_stamina
+        stamina_width = int(bar_width * stamina_percent)
+        pygame.draw.rect(
+            self.screen, Colors.CYAN,  # Blue/cyan for stamina
+            (bar_x, stamina_y, stamina_width, bar_height)
+        )
+        pygame.draw.rect(
+            self.screen, Colors.WHITE,
+            (bar_x, stamina_y, bar_width, bar_height), 2
+        )
+
+        # Stamina text
+        stamina_text = health_font.render(
+            f"SP: {int(self.player.stamina)}/{int(self.player.max_stamina)}",
+            True, Colors.WHITE
+        )
+        self.screen.blit(stamina_text, (bar_x + 5, stamina_y + 3))
