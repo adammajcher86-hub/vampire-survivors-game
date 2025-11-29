@@ -85,22 +85,6 @@ class XPOrb(BasePickup):
         )
         pulse_radius = int(self.radius * pulse_scale)
 
-        # Draw outer glow (semi-transparent)
-        """
-        glow_surface = pygame.Surface(
-            (pulse_radius * 4, pulse_radius * 4), pygame.SRCALPHA
-        )
-        pygame.draw.circle(
-            glow_surface,
-            (*self.color, 50),  # Semi-transparent cyan
-            (pulse_radius * 2, pulse_radius * 2),
-            pulse_radius * 2,
-        )
-        screen.blit(
-            glow_surface,
-            (screen_pos.x - pulse_radius * 2, screen_pos.y - pulse_radius * 2),
-        )"""
-
         # Draw main orb
         pygame.draw.circle(
             screen, self.color, (int(screen_pos.x), int(screen_pos.y)), pulse_radius

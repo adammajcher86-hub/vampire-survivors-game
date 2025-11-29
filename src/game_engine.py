@@ -4,7 +4,6 @@ Manages game state, entities, and systems
 """
 
 import pygame
-import random
 from src.config import WindowConfig, Colors
 from src.entities import Player, BasicWeapon
 from src.camera import Camera
@@ -134,9 +133,6 @@ class Game:
         # Check enemy-player collision
         self._check_enemy_collision(dt)
 
-        # Remove dead enemies and drop XP
-        self._remove_dead_enemies()
-
         # Check game over
         if not self.player.is_alive():
             print(
@@ -151,25 +147,14 @@ class Game:
                 if projectile.collides_with(enemy):
                     # Damage enemy
                     if enemy.take_damage(projectile.damage):
-                        # Enemy died - drop pickup
+                        # Enemy died
                         self.enemies_killed += 1
+                        self.pickup_manager.spawn_from_enemy(enemy, self.pickups)
+                        self.enemies.remove(enemy)
 
-                        # 90% XP orb, 10% health pickup
-                        if random.random() < 0.9:
-                            self.pickup_manager.spawn_xp_orb(
-                                enemy.position.x,
-                                enemy.position.y,
-                                enemy.xp_value,
-                                self.pickups,
-                            )
-                        else:
-                            self.pickup_manager.spawn_health_pickup(
-                                enemy.position.x, enemy.position.y, 20, self.pickups
-                            )
-
-                    # Remove projectile (hit something, stop checking)
+                    # Remove projectile
                     self.projectiles.remove(projectile)
-                    break  # Move to next projectile
+                    break
 
     def _remove_expired_projectiles(self):
         """Remove projectiles that have exceeded their lifetime"""
@@ -183,23 +168,6 @@ class Game:
             if enemy.collides_with(self.player):
                 # Enemy deals damage to player
                 self.player.take_damage(enemy.damage * dt)
-
-    def _remove_dead_enemies(self):
-        """Remove dead enemies and drop pickups"""
-        for enemy in list(self.enemies):
-            if enemy.is_dead:
-                # Drop pickup (90% XP, 10% health)
-                if random.random() < 0.9:
-                    self.pickup_manager.spawn_xp_orb(
-                        enemy.position.x, enemy.position.y, enemy.xp_value, self.pickups
-                    )
-                else:
-                    self.pickup_manager.spawn_health_pickup(
-                        enemy.position.x, enemy.position.y, 20, self.pickups
-                    )
-
-                # Remove enemy
-                self.enemies.remove(enemy)
 
     def render(self):
         """Render the game"""
