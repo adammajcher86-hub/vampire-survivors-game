@@ -34,15 +34,57 @@ python main.py
 ## Project Structure
 ```
 vampire-survivors-game/
-├── main.py           # Entry point
+├── main.py                     # Entry point
 ├── src/
-│   ├── config.py     # Game configuration
-│   ├── game_engine.py       # Main game controller
-│   ├── entities/     # Game entities (Player, Enemy, etc.)
-│   ├── systems/      # Game systems (Spawning, Weapons, etc.)
-│   └── ui/           # User interface components
-└── assets/
-    └── sprites/      # Game sprites and animations
+│   ├── game_engine.py          # Main game controller
+│   ├── camera.py               # Camera system
+│   │
+│   ├── config/                 # Game configuration
+│   │   ├── common/             # Shared configs (window, colors)
+│   │   ├── enemies/            # Enemy type configs
+│   │   ├── weapons/            # Weapon configs
+│   │   ├── game.py             # Game settings
+│   │   └── player.py           # Player settings
+│   │
+│   ├── entities/               # Game entities
+│   │   ├── player.py           # Player character
+│   │   ├── xp_orb.py           # XP orb (deprecated, use pickups)
+│   │   ├── enemies/            # Enemy types (polymorphic)
+│   │   │   ├── base_enemy.py
+│   │   │   ├── basic_enemy.py
+│   │   │   ├── fast_enemy.py
+│   │   │   ├── tank_enemy.py
+│   │   │   └── elite_enemy.py  # With dash attack
+│   │   ├── weapons/            # Weapon types (polymorphic)
+│   │   │   ├── base_weapon.py
+│   │   │   └── basic_weapon.py
+│   │   ├── projectiles/        # Projectile types (polymorphic)
+│   │   │   ├── base_projectile.py
+│   │   │   └── basic_projectile.py
+│   │   └── pickups/            # Pickup types (polymorphic)
+│   │       ├── base_pickup.py
+│   │       ├── xp_orb.py
+│   │       └── health_pickup.py
+│   │
+│   ├── systems/                # Game systems
+│   │   ├── enemy_spawner.py    # Enemy spawning
+│   │   ├── xp_system.py        # XP & leveling
+│   │   ├── upgrade_system.py   # Upgrade management
+│   │   └── pickups/            # Pickup systems
+│   │       ├── pickup_manager.py   # Pickup spawning/collection
+│   │       └── drop_tables.py      # Drop rate configuration
+│   │
+│   ├── ui/                     # User interface
+│   │   └── upgrade_menu.py     # Level-up menu
+│   │
+│   └── upgrades/               # Upgrade types (polymorphic)
+│       ├── base_upgrade.py
+│       ├── new_weapon_upgrade.py
+│       ├── weapon_level_upgrade.py
+│       └── stat_upgrade.py
+│
+└── assets/                     # (Future) Game assets
+    └── sprites/                # Sprites and animations
 ```
 
 ## License
