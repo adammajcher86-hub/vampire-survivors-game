@@ -40,7 +40,7 @@ class UpgradeSystem:
                 StatUpgrade(
                     "Attack Speed",
                     "attack_speed_multiplier",
-                    0.15,
+                    0.50,
                     is_percentage=True,
                     icon="⚡",
                 ),

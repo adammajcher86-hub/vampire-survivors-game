@@ -37,3 +37,6 @@ class Colors:
     UI_ACCENT = YELLOW
     HEALTH_BAR = GREEN
     DAMAGE_INDICATOR = RED
+
+    # Enemy Colors
+    GOLD = (255, 215, 0)

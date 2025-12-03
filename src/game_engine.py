@@ -191,8 +191,17 @@ class Game:
         """Check and handle enemy collision with player"""
         for enemy in self.enemies:
             if enemy.collides_with(self.player):
-                # Enemy deals damage to player
+                # Don't take damage if invulnerable (during dash)
                 if not self.player.invulnerable:
+                    # Check if it's an Elite doing a dash attack
+                    if hasattr(enemy, "is_dashing") and enemy.is_dashing:
+                        # Elite dash hit! Apply slow debuff
+                        self.player.apply_slow(
+                            duration=enemy.dash_slow_duration,
+                            strength=enemy.dash_slow_strength,
+                        )
+
+                    # Normal contact damage
                     damage = enemy.damage * dt
                     self.player.take_damage(damage)
 

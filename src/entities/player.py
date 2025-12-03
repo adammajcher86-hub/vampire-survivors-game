@@ -37,7 +37,7 @@ class Player(pygame.sprite.Sprite):
         self.stamina = 30
         self.stamina_regen = 5.0  # per second
 
-        # Dash mechanics - NEW!
+        # Dash mechanics
         self.dash_cost = 30.0
         self.dash_speed = 800.0  # Much faster than normal speed
         self.dash_duration = 0.2  # 0.2 seconds
@@ -49,9 +49,20 @@ class Player(pygame.sprite.Sprite):
         self.dash_cooldown = 0.0
         self.dash_direction = pygame.math.Vector2(0, 0)
         self.invulnerable = False  # Brief invincibility during dash
+        # Debuffs
+        self.is_slowed = False
+        self.slow_timer = 0.0
+        self.slow_multiplier = 1.0  # 1.0 = normal speed, 0.5 = 50% speed
 
     def update(self, dt, dx, dy):
         """Update player state"""
+        # Update debuff timers
+        if self.is_slowed:
+            self.slow_timer -= dt
+            if self.slow_timer <= 0:
+                self.is_slowed = False
+                self.slow_multiplier = 1.0
+                print("✅ Slow effect ended!")
 
         # Update dash cooldown
         if self.dash_cooldown > 0:
@@ -79,7 +90,8 @@ class Player(pygame.sprite.Sprite):
                 if direction.length() > 0:
                     direction = direction.normalize()
 
-                self.velocity = direction * self.speed
+                current_speed = self.speed * self.slow_multiplier
+                self.velocity = direction * current_speed
                 self.position += self.velocity * dt
             else:
                 self.velocity = pygame.math.Vector2(0, 0)
@@ -164,3 +176,16 @@ class Player(pygame.sprite.Sprite):
             self.dash_direction = self.dash_direction.normalize()
 
         return True
+
+    def apply_slow(self, duration, strength):
+        """
+        Apply movement slow debuff
+
+        Args:
+            duration: How long to slow (seconds)
+            strength: Speed multiplier (0.5 = 50% speed)
+        """
+        self.is_slowed = True
+        self.slow_timer = duration
+        self.slow_multiplier = strength
+        print(f"⚠️ SLOWED! Speed reduced to {int(strength * 100)}% for {duration}s")
