@@ -18,6 +18,7 @@ class Game:
         self.screen = screen
         self.running = True
         self.paused = False
+        self.game_over = False
 
         # Game time tracking
         self.game_time = 0.0
@@ -60,7 +61,18 @@ class Game:
 
     def handle_event(self, event):
         """Handle game events"""
-        # Handle upgrade menu input first
+
+        # Handle game over input
+        if self.game_over:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    self.restart()
+                    return
+                elif event.key == pygame.K_ESCAPE:
+                    self.running = False
+                    return
+
+        # Handle upgrade menu input
         if self.upgrade_menu.active:
             selected_index = self.upgrade_menu.handle_input(event)
             if selected_index is not None:
@@ -69,20 +81,16 @@ class Game:
 
         # Normal game input
         if event.type == pygame.KEYDOWN:
-            # Dash with Spacebar - NEW!
+            # Dash with Spacebar
             if event.key == pygame.K_SPACE:
-                # Get current movement direction
                 keys = pygame.key.get_pressed()
                 dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (
-                        keys[pygame.K_a] or keys[pygame.K_LEFT]
+                    keys[pygame.K_a] or keys[pygame.K_LEFT]
                 )
                 dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (
-                        keys[pygame.K_w] or keys[pygame.K_UP]
+                    keys[pygame.K_w] or keys[pygame.K_UP]
                 )
-
-                # Try to dash
                 self.player.try_dash(dx, dy)
-
 
             # Pause
             if event.key == pygame.K_ESCAPE:
@@ -91,7 +99,7 @@ class Game:
 
     def update(self, dt):
         """Update game state"""
-        if self.paused:
+        if self.paused or self.game_over:
             return
 
         self.game_time += dt
@@ -151,10 +159,11 @@ class Game:
 
         # Check game over
         if not self.player.is_alive():
-            print(
-                f"Game Over! Survived: {self.game_time:.1f}s, Killed: {self.enemies_killed}, Level: {self.xp_system.current_level}"
-            )
-            self.paused = True
+            self.game_over = True  # ✅ Set game_over, not paused!
+            print("💀 GAME OVER!")
+            print(f"Survived: {self.game_time:.1f}s")
+            print(f"Enemies Killed: {self.enemies_killed}")
+            print(f"Level Reached: {self.xp_system.current_level}")
 
     def _check_projectile_collisions(self):
         """Check and handle projectile-enemy collisions"""
@@ -219,8 +228,13 @@ class Game:
         if self.xp_system.level_up_flash:
             self._draw_level_up()
 
-        if self.paused:
-            self._draw_pause_screen()
+            # Draw pause screen (but not if game over)
+        if self.paused and not self.game_over:
+            self._draw_pause_text()  # Just the pause text
+
+            # Draw game over screen
+        if self.game_over:
+            self._draw_game_over()
 
             # Draw upgrade menu (if active)
         self.upgrade_menu.render(self.screen)
@@ -368,6 +382,7 @@ class Game:
             f"Survived: {self.game_time:.1f}s",
             f"Enemies Killed: {self.enemies_killed}",
             f"Final Level: {self.xp_system.current_level}",
+            "Press r for restart, esc to quit.",
         ]
 
         y_offset = WindowConfig.HEIGHT // 2 + 20
@@ -408,7 +423,6 @@ class Game:
         self.upgrade_menu.hide()
         self.paused = False
 
-
     def _render_resource_bars(self):
         """Render health and stamina bars"""
         bar_width = 300
@@ -419,48 +433,71 @@ class Game:
 
         # Health Bar
         pygame.draw.rect(
-            self.screen, (50, 50, 50),
-            (bar_x, bar_y, bar_width, bar_height)
+            self.screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height)
         )
         health_percent = self.player.health / self.player.max_health
         health_width = int(bar_width * health_percent)
         pygame.draw.rect(
-            self.screen, Colors.RED,
-            (bar_x, bar_y, health_width, bar_height)
+            self.screen, Colors.RED, (bar_x, bar_y, health_width, bar_height)
         )
         pygame.draw.rect(
-            self.screen, Colors.WHITE,
-            (bar_x, bar_y, bar_width, bar_height), 2
+            self.screen, Colors.WHITE, (bar_x, bar_y, bar_width, bar_height), 2
         )
 
         # Health text
         health_font = pygame.font.Font(None, 24)
         health_text = health_font.render(
             f"HP: {int(self.player.health)}/{int(self.player.max_health)}",
-            True, Colors.WHITE
+            True,
+            Colors.WHITE,
         )
         self.screen.blit(health_text, (bar_x + 5, bar_y + 3))
 
         # Stamina Bar
         stamina_y = bar_y + spacing
         pygame.draw.rect(
-            self.screen, (50, 50, 50),
-            (bar_x, stamina_y, bar_width, bar_height)
+            self.screen, (50, 50, 50), (bar_x, stamina_y, bar_width, bar_height)
         )
         stamina_percent = self.player.stamina / self.player.max_stamina
         stamina_width = int(bar_width * stamina_percent)
         pygame.draw.rect(
-            self.screen, Colors.CYAN,  # Blue/cyan for stamina
-            (bar_x, stamina_y, stamina_width, bar_height)
+            self.screen,
+            Colors.CYAN,  # Blue/cyan for stamina
+            (bar_x, stamina_y, stamina_width, bar_height),
         )
         pygame.draw.rect(
-            self.screen, Colors.WHITE,
-            (bar_x, stamina_y, bar_width, bar_height), 2
+            self.screen, Colors.WHITE, (bar_x, stamina_y, bar_width, bar_height), 2
         )
 
         # Stamina text
         stamina_text = health_font.render(
             f"SP: {int(self.player.stamina)}/{int(self.player.max_stamina)}",
-            True, Colors.WHITE
+            True,
+            Colors.WHITE,
         )
         self.screen.blit(stamina_text, (bar_x + 5, stamina_y + 3))
+
+    def restart(self):
+        """Restart the game - reset all state"""
+        # Reset game state
+        self.game_over = False
+        self.paused = False
+        self.game_time = 0.0
+        self.enemies_killed = 0
+
+        # Reset player
+        self.player = Player(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2)
+
+        # Clear all entities
+        self.enemies.empty()
+        self.projectiles.empty()
+        self.pickups.empty()
+
+        # Reset weapons
+        self.weapons = [BasicWeapon()]
+
+        # Reset systems
+        self.xp_system = XPSystem()
+        self.enemy_spawner = EnemySpawner()
+
+        print("🔄 Game Restarted!")

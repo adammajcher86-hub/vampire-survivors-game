@@ -22,15 +22,13 @@ def main():
 
     # Main game loop
     clock = pygame.time.Clock()
-    running = True
 
-    while running:
-        dt = clock.tick(WindowConfig.FPS) / 1000.0  # Delta time in seconds
-
+    while game.running:
+        dt = clock.tick(WindowConfig.FPS) / 1000.0
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                game.running = False
             game.handle_event(event)
 
         # Update game state

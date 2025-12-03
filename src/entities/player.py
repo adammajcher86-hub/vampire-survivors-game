@@ -129,7 +129,6 @@ class Player(pygame.sprite.Sprite):
                 3,
             )
 
-
     def try_dash(self, dx, dy):
         """
         Attempt to dash in direction
