@@ -44,11 +44,11 @@ vampire-survivors-game/
 │   │   ├── enemies/            # Enemy type configs
 │   │   ├── weapons/            # Weapon configs
 │   │   ├── game.py             # Game settings
-│   │   └── player.py           # Player settings
+│   │   ├── player.py           # Player settings
+│   │   └── spawn_manager.py    # Spawn Manager
 │   │
 │   ├── entities/               # Game entities
 │   │   ├── player.py           # Player character
-│   │   ├── xp_orb.py           # XP orb (deprecated, use pickups)
 │   │   ├── enemies/            # Enemy types (polymorphic)
 │   │   │   ├── base_enemy.py
 │   │   │   ├── basic_enemy.py
