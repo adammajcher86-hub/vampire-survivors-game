@@ -4,7 +4,7 @@ Manages all pickups (XP orbs, health, powerups, etc.)
 """
 
 import random
-from src.entities.pickups import XPOrb, HealthPickup
+from src.entities.pickups import XPOrb, HealthPickup, BombPickup
 from .drop_tables import DROP_TABLES, DEFAULT_DROP_TABLE
 
 
@@ -41,7 +41,13 @@ class PickupManager:
             self.spawn_health_pickup(
                 enemy.position.x, enemy.position.y, params["heal_amount"], pickups
             )
-        # Future pickup types go here
+        elif pickup_type == 'bomb_pickup':
+            self.spawn_bomb_pickup(
+                enemy.position.x,
+                enemy.position.y,
+                params['bomb_amount'],
+                pickups
+            )
 
     def _weighted_choice(self, drop_table):
         """
@@ -123,3 +129,16 @@ class PickupManager:
                 pickups.remove(pickup)
 
         return collected_xp
+
+    def spawn_bomb_pickup(self, x, y, bomb_amount, pickups):
+        """
+        Spawn a bomb pickup at position
+
+        Args:
+            x: X position
+            y: Y position
+            bomb_amount: Number of bombs to give
+            pickups: Sprite group to add pickup to
+        """
+        bomb_pickup = BombPickup(x, y, bomb_amount)
+        pickups.add(bomb_pickup)
