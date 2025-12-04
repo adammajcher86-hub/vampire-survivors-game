@@ -9,6 +9,8 @@ from src.entities import Player, BasicWeapon
 from src.camera import Camera
 from src.systems import EnemySpawner, XPSystem, UpgradeSystem, PickupManager
 from src.ui import UpgradeMenu
+from src.entities.projectiles import BombProjectile
+from src.config.weapons.bomb import BombConfig
 
 
 class Game:
@@ -82,6 +84,10 @@ class Game:
         # Normal game input
         if event.type == pygame.KEYDOWN:
             # Dash with Spacebar
+            if event.key == pygame.K_y:
+                if self.player.can_place_bomb():
+                    self.player.place_bomb(self.projectiles)
+
             if event.key == pygame.K_SPACE:
                 keys = pygame.key.get_pressed()
                 dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (
@@ -133,6 +139,9 @@ class Game:
         # Update projectiles
         for projectile in self.projectiles:
             projectile.update(dt)
+
+        # Check bomb explosions
+        self._check_bomb_explosions()
 
         # Check projectile-enemy collisions
         self._check_projectile_collisions()
@@ -484,7 +493,14 @@ class Game:
             True,
             Colors.WHITE,
         )
+
         self.screen.blit(stamina_text, (bar_x + 5, stamina_y + 3))
+        bomb_y = stamina_y + spacing + 10
+        bomb_font = pygame.font.Font(None, 36)
+        bomb_text = bomb_font.render(
+            f"💣 x{self.player.bomb_count}", True, Colors.YELLOW
+        )
+        self.screen.blit(bomb_text, (bar_x, bomb_y))
 
     def restart(self):
         """Restart the game - reset all state"""
@@ -510,3 +526,45 @@ class Game:
         self.enemy_spawner = EnemySpawner()
 
         print("🔄 Game Restarted!")
+
+    def _check_bomb_explosions(self):
+        """Check for bomb explosions and apply AOE damage"""
+        for projectile in list(self.projectiles):
+            if isinstance(projectile, BombProjectile) and projectile.has_exploded:
+                explosion_data = projectile.get_explosion_data()
+                explosion_pos = explosion_data["position"]
+                explosion_radius = explosion_data["radius"]
+                explosion_damage = explosion_data["damage"]
+
+                print(
+                    f"💥 BOOM! Radius: {explosion_radius}px at ({explosion_pos.x:.0f}, {explosion_pos.y:.0f})"
+                )
+                print(f"Total enemies on screen: {len(self.enemies)}")
+
+                # Damage all enemies in radius
+                enemies_hit = 0
+                for enemy in list(self.enemies):
+                    distance = enemy.position.distance_to(explosion_pos)
+
+                    if distance <= explosion_radius:
+                        if enemy.take_damage(explosion_damage):
+                            # Enemy died
+                            self.enemies_killed += 1
+                            self.pickup_manager.spawn_from_enemy(enemy, self.pickups)
+                            self.enemies.remove(enemy)
+                        enemies_hit += 1
+
+                # Player damage check
+                player_distance = self.player.position.distance_to(explosion_pos)
+                if player_distance <= explosion_radius:
+                    self.player.take_damage(BombConfig.PLAYER_DAMAGE)
+                    print(
+                        f"⚠️ Player caught in explosion! Distance: {player_distance:.0f}px"
+                    )
+
+                print(
+                    f"💀 Enemies hit: {enemies_hit}/{len(list(self.enemies)) + enemies_hit}"
+                )
+
+                # Remove bomb
+                self.projectiles.remove(projectile)

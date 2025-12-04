@@ -5,6 +5,9 @@ The main character controlled by the player
 
 import pygame
 from src.config import PlayerConfig, Colors
+from src.config.weapons.bomb import BombConfig
+from src.entities.projectiles import BombProjectile
+import random
 
 
 class Player(pygame.sprite.Sprite):
@@ -53,6 +56,10 @@ class Player(pygame.sprite.Sprite):
         self.is_slowed = False
         self.slow_timer = 0.0
         self.slow_multiplier = 1.0  # 1.0 = normal speed, 0.5 = 50% speed
+        # Bombs
+        self.bomb_count = BombConfig.STARTING_BOMBS
+        self.max_bombs = BombConfig.MAX_BOMBS
+        self.bomb_cooldown = BombConfig.PLACEMENT_COOLDOWN
 
     def update(self, dt, dx, dy):
         """Update player state"""
@@ -63,6 +70,10 @@ class Player(pygame.sprite.Sprite):
                 self.is_slowed = False
                 self.slow_multiplier = 1.0
                 print("✅ Slow effect ended!")
+
+        # Update bomb cooldown
+        if self.bomb_cooldown > 0:
+            self.bomb_cooldown -= dt
 
         # Update dash cooldown
         if self.dash_cooldown > 0:
@@ -189,3 +200,73 @@ class Player(pygame.sprite.Sprite):
         self.slow_timer = duration
         self.slow_multiplier = strength
         print(f"⚠️ SLOWED! Speed reduced to {int(strength * 100)}% for {duration}s")
+
+    def can_place_bomb(self):
+        """Check if player has bombs to place"""
+        return self.bomb_count > 0
+
+    def use_bomb(self):
+        """
+        Use one bomb (decrease count)
+
+        Returns:
+            bool: True if bomb was used
+        """
+        if self.bomb_count > 0:
+            self.bomb_count -= 1
+            print(f"💣 Bomb placed! Remaining: {self.bomb_count}")
+            return True
+        else:
+            print("⚠️ No bombs remaining!")
+            return False
+
+    def add_bombs(self, amount):
+        """
+        Add bombs to inventory
+
+        Args:
+            amount: Number of bombs to add
+        """
+        old_count = self.bomb_count
+        self.bomb_count = min(self.bomb_count + amount, self.max_bombs)
+        added = self.bomb_count - old_count
+        if added > 0:
+            print(f"💣 +{added} bomb(s)! Total: {self.bomb_count}")
+
+    def place_bomb(self, projectiles):
+        """
+        Place a bomb near player's position
+
+        Args:
+            projectiles: Sprite group to add bomb to
+
+        Returns:
+            bool: True if bomb was placed
+        """
+
+        # Check cooldown
+        if self.bomb_cooldown > 0:
+            print(f"⏱️ Bomb on cooldown! {self.bomb_cooldown:.1f}s remaining")
+            return False
+
+        # Check bomb count
+        if self.bomb_count <= 0:
+            print("⚠️ No bombs remaining!")
+            return False
+
+        # Calculate position
+        offset_x = random.randint(-10, 10)
+        offset_y = random.randint(-10, 10)
+        bomb_x = self.position.x + offset_x
+        bomb_y = self.position.y + offset_y
+
+        # Create bomb
+        bomb = BombProjectile(bomb_x, bomb_y)
+        projectiles.add(bomb)
+
+        # Decrease bomb count and start cooldown
+        self.bomb_count -= 1
+        self.bomb_cooldown = BombConfig.PLACEMENT_COOLDOWN  # ✅ Start cooldown!
+        print(f"💣 Bomb placed! Remaining: {self.bomb_count}")
+
+        return True
