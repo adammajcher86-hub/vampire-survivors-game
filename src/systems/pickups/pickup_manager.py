@@ -41,12 +41,9 @@ class PickupManager:
             self.spawn_health_pickup(
                 enemy.position.x, enemy.position.y, params["heal_amount"], pickups
             )
-        elif pickup_type == 'bomb_pickup':
+        elif pickup_type == "bomb_pickup":
             self.spawn_bomb_pickup(
-                enemy.position.x,
-                enemy.position.y,
-                params['bomb_amount'],
-                pickups
+                enemy.position.x, enemy.position.y, params["bomb_amount"], pickups
             )
 
     def _weighted_choice(self, drop_table):

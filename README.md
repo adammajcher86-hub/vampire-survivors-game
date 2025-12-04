@@ -86,7 +86,3 @@ vampire-survivors-game/
 └── assets/                     # (Future) Game assets
     └── sprites/                # Sprites and animations
 ```
-
-## License
-
-Free to use for learning and personal projects.

@@ -9,8 +9,8 @@ from .health_pickup import HealthPickup
 from .bomb_pickup import BombPickup
 
 __all__ = [
-    'BasePickup',
-    'XPOrb',
-    'HealthPickup',
-    'BombPickup',
+    "BasePickup",
+    "XPOrb",
+    "HealthPickup",
+    "BombPickup",
 ]

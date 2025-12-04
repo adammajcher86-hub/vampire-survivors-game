@@ -9,8 +9,9 @@ from src.entities import Player, BasicWeapon
 from src.camera import Camera
 from src.systems import EnemySpawner, XPSystem, UpgradeSystem, PickupManager
 from src.ui import UpgradeMenu
-from src.entities.projectiles import BombProjectile
 from src.config.weapons.bomb import BombConfig
+from src.entities.projectiles import BombProjectile, LaserProjectile
+from src.config.enemies.tank_laser import TankLaserConfig
 
 
 class Game:
@@ -53,6 +54,11 @@ class Game:
 
         # Game stats
         self.enemies_killed = 0
+        # Sprite groups
+        self.enemies = pygame.sprite.Group()
+        self.projectiles = pygame.sprite.Group()  # Player projectiles
+        self.enemy_projectiles = pygame.sprite.Group()  # Enemy projectiles
+        self.pickups = pygame.sprite.Group()
 
         print("Game initialized!")
         print(f"Window: {WindowConfig.WIDTH}x{WindowConfig.HEIGHT}")
@@ -131,7 +137,7 @@ class Game:
         # Update all enemies
         for enemy in self.enemies:
             enemy.update(dt, self.player.position)
-
+        self._check_enemy_shooting()
         # Update all weapons (POLYMORPHIC!)
         for weapon in self.weapons:
             weapon.update(dt, self.player, self.enemies, self.projectiles)
@@ -139,13 +145,15 @@ class Game:
         # Update projectiles
         for projectile in self.projectiles:
             projectile.update(dt)
-
+        for projectile in self.enemy_projectiles:
+            projectile.update(dt)
         # Check bomb explosions
         self._check_bomb_explosions()
 
         # Check projectile-enemy collisions
         self._check_projectile_collisions()
-
+        # Check enemy projectile-player collisions
+        self._check_enemy_projectile_collisions()
         # Remove expired projectiles
         self._remove_expired_projectiles()
 
@@ -195,6 +203,10 @@ class Game:
         for projectile in list(self.projectiles):
             if projectile.is_expired():
                 self.projectiles.remove(projectile)
+        # Enemy projectiles
+        for projectile in list(self.enemy_projectiles):
+            if projectile.is_expired():
+                self.enemy_projectiles.remove(projectile)
 
     def _check_enemy_collision(self, dt):
         """Check and handle enemy collision with player"""
@@ -229,7 +241,9 @@ class Game:
         # Draw all projectiles
         for projectile in self.projectiles:
             projectile.render(self.screen, self.camera)
-
+        # Draw enemy projectiles
+        for projectile in self.enemy_projectiles:
+            projectile.render(self.screen, self.camera)
         # Draw all enemies
         for enemy in self.enemies:
             enemy.render(self.screen, self.camera)
@@ -568,3 +582,40 @@ class Game:
 
                 # Remove bomb
                 self.projectiles.remove(projectile)
+
+    def _check_enemy_shooting(self):
+        """Check for enemies ready to shoot and spawn projectiles"""
+        for enemy in self.enemies:
+            # Check if tank is ready to shoot
+            if hasattr(enemy, "should_shoot") and enemy.should_shoot():
+                # Get shot data
+                shot_data = enemy.get_shot_data()
+
+                # Create laser projectile
+                laser = LaserProjectile(
+                    shot_data["position"].x,
+                    shot_data["position"].y,
+                    shot_data["target"],
+                    TankLaserConfig,
+                )
+
+                # Add to enemy projectiles group
+                self.enemy_projectiles.add(laser)
+
+                # Reset enemy shoot state
+                enemy.reset_shoot_state()
+
+                print("💥 Tank fired laser!")
+
+    def _check_enemy_projectile_collisions(self):
+        """Check collisions between enemy projectiles and player"""
+        for projectile in list(self.enemy_projectiles):
+            # Check if laser hits player
+            if projectile.collides_with(self.player):
+                # Don't damage if player is invulnerable (dashing)
+                if not self.player.invulnerable:
+                    self.player.take_damage(projectile.damage)
+                    print(f"⚡ Player hit by laser! -{projectile.damage} HP")
+
+                # Remove projectile
+                self.enemy_projectiles.remove(projectile)

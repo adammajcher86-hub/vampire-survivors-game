@@ -2,9 +2,9 @@
 Bomb Pickup
 Gives player bombs when collected
 """
+
 import pygame
 from src.entities.pickups.base_pickup import BasePickup
-from src.config.weapons.bomb import BombConfig
 
 
 class BombPickup(BasePickup):
@@ -59,15 +59,12 @@ class BombPickup(BasePickup):
             screen,
             self.highlight_color,
             (int(screen_pos.x), int(screen_pos.y)),
-            self.radius + 2
+            self.radius + 2,
         )
 
         # Draw inner bomb
         pygame.draw.circle(
-            screen,
-            self.color,
-            (int(screen_pos.x), int(screen_pos.y)),
-            self.radius
+            screen, self.color, (int(screen_pos.x), int(screen_pos.y)), self.radius
         )
 
         # Draw fuse (small line on top)
