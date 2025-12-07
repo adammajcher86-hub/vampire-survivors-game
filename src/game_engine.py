@@ -60,6 +60,10 @@ class Game:
         self.enemy_projectiles = pygame.sprite.Group()  # Enemy projectiles
         self.pickups = pygame.sprite.Group()
 
+        # Mouse tracking
+        self.mouse_screen_pos = pygame.math.Vector2(0, 0)
+        self.mouse_world_pos = pygame.math.Vector2(0, 0)
+
         print("Game initialized!")
         print(f"Window: {WindowConfig.WIDTH}x{WindowConfig.HEIGHT}")
         print(f"FPS: {WindowConfig.FPS}")
@@ -70,6 +74,9 @@ class Game:
     def handle_event(self, event):
         """Handle game events"""
 
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 3:
+                self.player.place_bomb(self.projectiles)
         # Handle game over input
         if self.game_over:
             if event.type == pygame.KEYDOWN:
@@ -89,11 +96,11 @@ class Game:
 
         # Normal game input
         if event.type == pygame.KEYDOWN:
-            # Dash with Spacebar
-            if event.key == pygame.K_y:
-                if self.player.can_place_bomb():
-                    self.player.place_bomb(self.projectiles)
 
+            # if event.key == pygame.K_y:
+            #    if self.player.can_place_bomb():
+            #       self.player.place_bomb(self.projectiles)
+            # Dash with Spacebar
             if event.key == pygame.K_SPACE:
                 keys = pygame.key.get_pressed()
                 dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (
@@ -115,6 +122,13 @@ class Game:
             return
 
         self.game_time += dt
+
+        self.mouse_screen_pos = pygame.math.Vector2(pygame.mouse.get_pos())
+        # Convert screen position to world position
+        self.mouse_world_pos = pygame.math.Vector2(
+            self.mouse_screen_pos.x + self.camera.offset.x,
+            self.mouse_screen_pos.y + self.camera.offset.y,
+        )
 
         # Get player input
         keys = pygame.key.get_pressed()
@@ -140,7 +154,9 @@ class Game:
         self._check_enemy_shooting()
         # Update all weapons (POLYMORPHIC!)
         for weapon in self.weapons:
-            weapon.update(dt, self.player, self.enemies, self.projectiles)
+            weapon.update(
+                dt, self.player, self.enemies, self.projectiles, self.mouse_world_pos
+            )
 
         # Update projectiles
         for projectile in self.projectiles:
@@ -270,6 +286,9 @@ class Game:
 
             # Draw upgrade menu (if active)
         self.upgrade_menu.render(self.screen)
+
+        # Draw crosshair (if has spread weapon)
+        self._render_crosshair()
 
     def _draw_grid(self):
         """Draw background grid"""
@@ -619,3 +638,58 @@ class Game:
 
                 # Remove projectile
                 self.enemy_projectiles.remove(projectile)
+
+    def _render_crosshair(self):
+        """Render mouse crosshair for aiming"""
+        # Only show crosshair if player has spread weapon
+        has_spread_weapon = any(
+            weapon.__class__.__name__ == "SpreadWeapon" for weapon in self.weapons
+        )
+
+        if not has_spread_weapon:
+            return
+
+        from src.config.weapons.spread_weapon import SpreadWeaponConfig
+
+        # Get mouse position (screen space)
+        mouse_x, mouse_y = int(self.mouse_screen_pos.x), int(self.mouse_screen_pos.y)
+
+        size = SpreadWeaponConfig.CROSSHAIR_SIZE
+        color = SpreadWeaponConfig.CROSSHAIR_COLOR
+        thickness = SpreadWeaponConfig.CROSSHAIR_THICKNESS
+
+        # Draw crosshair (circle + cross)
+        # Outer circle
+        pygame.draw.circle(self.screen, color, (mouse_x, mouse_y), size, thickness)
+
+        # Horizontal line
+        pygame.draw.line(
+            self.screen,
+            color,
+            (mouse_x - size - 5, mouse_y),
+            (mouse_x - size // 2, mouse_y),
+            thickness,
+        )
+        pygame.draw.line(
+            self.screen,
+            color,
+            (mouse_x + size // 2, mouse_y),
+            (mouse_x + size + 5, mouse_y),
+            thickness,
+        )
+
+        # Vertical line
+        pygame.draw.line(
+            self.screen,
+            color,
+            (mouse_x, mouse_y - size - 5),
+            (mouse_x, mouse_y - size // 2),
+            thickness,
+        )
+        pygame.draw.line(
+            self.screen,
+            color,
+            (mouse_x, mouse_y + size // 2),
+            (mouse_x, mouse_y + size + 5),
+            thickness,
+        )

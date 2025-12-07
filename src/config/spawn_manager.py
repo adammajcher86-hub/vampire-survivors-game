@@ -25,6 +25,6 @@ class SpawnManagerConfig:
 
     # Enemy type distribution (percentage chances)
     BASIC_ENEMY_CHANCE = 0.70  # 70%
-    FAST_ENEMY_CHANCE = 0.15  # 15%
-    TANK_ENEMY_CHANCE = 0.10  # 10%
+    FAST_ENEMY_CHANCE = 0.18  # 18%
+    TANK_ENEMY_CHANCE = 0.07  # 7%
     ELITE_ENEMY_CHANCE = 0.05  # 5%

@@ -4,7 +4,8 @@ Manages available upgrades and generates choices for level-up
 """
 
 import random
-from src.upgrades import WeaponLevelUpgrade, StatUpgrade
+from src.upgrades import WeaponLevelUpgrade, StatUpgrade, NewWeaponUpgrade
+from src.entities.weapons import SpreadWeapon
 
 
 class UpgradeSystem:
@@ -40,21 +41,17 @@ class UpgradeSystem:
                 StatUpgrade(
                     "Attack Speed",
                     "attack_speed_multiplier",
-                    0.50,
+                    0.30,
                     is_percentage=True,
                     icon="⚡",
                 ),
-                StatUpgrade(
-                    "HP Regen", "hp_regen", 0.3, is_percentage=False, icon="💚"
-                ),
+                StatUpgrade("HP Regen", "hp_regen", 1, is_percentage=False, icon="💚"),
             ]
         )
 
         # TODO: Add more weapon upgrades when you create new weapons
         # Example:
-        # self.available_upgrades.append(
-        #     NewWeaponUpgrade("Spread Weapon", SpreadWeapon)
-        # )
+        self.available_upgrades.append(NewWeaponUpgrade("Spread Shot", SpreadWeapon))
 
     def generate_choices(self, player, weapons, num_choices=3):
         """

@@ -29,7 +29,7 @@ class BaseWeapon(ABC):
         # Internal state
         self.cooldown_timer = 0.0
 
-    def update(self, dt, player, enemies, projectiles):
+    def update(self, dt, player, enemies, projectiles, mouse_world_pos):
         """
         Update weapon and fire if ready
 

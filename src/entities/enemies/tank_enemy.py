@@ -30,7 +30,7 @@ class TankEnemy(Enemy):
         self.size = 30
         self.radius = self.size // 2
 
-        # Shooting state - NEW!
+        # Shooting state
         self.can_shoot = True
         self.shoot_cooldown = random.uniform(
             TankLaserConfig.SHOOT_COOLDOWN_MIN, TankLaserConfig.SHOOT_COOLDOWN_MAX
