@@ -7,7 +7,7 @@ import pygame
 from src.config import WindowConfig, Colors
 from src.entities import Player, BasicWeapon
 from src.camera import Camera
-from src.systems import EnemySpawner, XPSystem, UpgradeSystem, PickupManager
+from src.systems import EnemySpawner, XPSystem, UpgradeSystem, PickupManager, WaveSystem
 from src.ui import UpgradeMenu
 from src.config.weapons.bomb import BombConfig
 from src.entities.projectiles import BombProjectile, LaserProjectile
@@ -51,7 +51,7 @@ class Game:
         # Upgrade system
         self.upgrade_system = UpgradeSystem()
         self.upgrade_menu = UpgradeMenu()
-
+        self.wave_system = WaveSystem()
         # Game stats
         self.enemies_killed = 0
         # Sprite groups
@@ -146,7 +146,11 @@ class Game:
         self.camera.update(self.player)
 
         # Update enemy spawner
-        self.enemy_spawner.update(dt, self.player.position, self.enemies)
+        enemy_type_to_spawn = self.wave_system.update(dt, self.enemies)
+        if enemy_type_to_spawn:
+            self.enemy_spawner.spawn_enemy_by_type(
+                enemy_type_to_spawn, self.player.position, self.enemies
+            )
 
         # Update all enemies
         for enemy in self.enemies:
@@ -207,6 +211,7 @@ class Game:
                     if enemy.take_damage(projectile.damage):
                         # Enemy died
                         self.enemies_killed += 1
+                        self.wave_system.on_enemy_killed()
                         self.pickup_manager.spawn_from_enemy(enemy, self.pickups)
                         self.enemies.remove(enemy)
 
@@ -271,6 +276,7 @@ class Game:
         self._draw_xp_bar()
         self._draw_debug_info()
         self._render_resource_bars()
+        self._render_wave_ui()
 
         # Draw level up notification
         if self.xp_system.level_up_flash:
@@ -554,12 +560,11 @@ class Game:
         )
 
         self.screen.blit(stamina_text, (bar_x + 5, stamina_y + 3))
-        bomb_y = stamina_y + spacing + 10
         bomb_font = pygame.font.Font(None, 36)
         bomb_text = bomb_font.render(
-            f"💣 x{self.player.bomb_count}", True, Colors.YELLOW
+            f"Bombs x{self.player.bomb_count}", True, Colors.YELLOW
         )
-        self.screen.blit(bomb_text, (bar_x, bomb_y))
+        self.screen.blit(bomb_text, (150, 5))
 
     def restart(self):
         """Restart the game - reset all state"""
@@ -609,6 +614,7 @@ class Game:
                         if enemy.take_damage(explosion_damage):
                             # Enemy died
                             self.enemies_killed += 1
+                            self.wave_system.on_enemy_killed()
                             self.pickup_manager.spawn_from_enemy(enemy, self.pickups)
                             self.enemies.remove(enemy)
                         enemies_hit += 1
@@ -719,3 +725,42 @@ class Game:
             (mouse_x, mouse_y + size + 5),
             thickness,
         )
+
+    def _render_wave_ui(self):
+        """Render wave information"""
+        wave_data = self.wave_system.get_progress()
+
+        # Wave counter (top center)
+        wave_font = pygame.font.Font(None, 48)
+        wave_text = wave_font.render(f"Wave {wave_data['wave']}", True, Colors.YELLOW)
+        wave_rect = wave_text.get_rect(center=(70, 20))
+        self.screen.blit(wave_text, wave_rect)
+
+        # Enemies remaining (below wave counter)
+        if wave_data["active"]:
+            enemies_font = pygame.font.Font(None, 32)
+            enemies_remaining = wave_data["enemies_remaining"]
+            enemies_text = enemies_font.render(
+                f"Enemies: {enemies_remaining}", True, Colors.WHITE
+            )
+            enemies_rect = enemies_text.get_rect(center=(350, 15))
+            self.screen.blit(enemies_text, enemies_rect)
+
+        # Wave complete message
+        if wave_data["complete"] and wave_data["in_rest"]:
+            complete_font = pygame.font.Font(None, 72)
+            complete_text = complete_font.render("WAVE COMPLETE!", True, Colors.GREEN)
+            complete_rect = complete_text.get_rect(
+                center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 - 50)
+            )
+            self.screen.blit(complete_text, complete_rect)
+
+            # Next wave countdown
+            countdown_font = pygame.font.Font(None, 48)
+            countdown_text = countdown_font.render(
+                f"Next wave in {int(wave_data['rest_timer']) + 1}s", True, Colors.WHITE
+            )
+            countdown_rect = countdown_text.get_rect(
+                center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 + 20)
+            )
+            self.screen.blit(countdown_text, countdown_rect)

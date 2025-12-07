@@ -14,7 +14,7 @@ class SpreadWeaponConfig:
     PROJECTILE_COUNT = 3  # Number of projectiles per shot
     SPREAD_ANGLE = 30  # Total spread angle in degrees
     PROJECTILE_SPEED = 600  # pixels per second
-    PROJECTILE_DAMAGE = 10  # damage per projectile
+    PROJECTILE_DAMAGE = 15  # damage per projectile
     PROJECTILE_LIFETIME = 2.0  # seconds
     PROJECTILE_SIZE = 3  # radius in pixels
 

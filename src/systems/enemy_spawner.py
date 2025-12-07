@@ -103,3 +103,44 @@ class EnemySpawner:
             return TankEnemy(x, y)
         else:
             return EliteEnemy(x, y)
+
+    def spawn_enemy_by_type(self, enemy_type, player_position, enemies):
+        """
+        Spawn specific enemy type
+
+        Args:
+            enemy_type: Enemy class name (e.g., 'BasicEnemy')
+            player_position: Player position for spawn location
+            enemies: Sprite group to add enemy to
+        """
+        from src.entities.enemies import BasicEnemy, FastEnemy, TankEnemy, EliteEnemy
+
+        # Map enemy type names to classes
+        enemy_classes = {
+            "BasicEnemy": BasicEnemy,
+            "FastEnemy": FastEnemy,
+            "TankEnemy": TankEnemy,
+            "EliteEnemy": EliteEnemy,
+        }
+
+        enemy_class = enemy_classes.get(enemy_type, BasicEnemy)
+
+        # Get spawn position (off-screen)
+        spawn_x, spawn_y = self._get_spawn_position(player_position)
+
+        # Create enemy
+        enemy = enemy_class(spawn_x, spawn_y)
+        enemies.add(enemy)
+
+    def _get_spawn_position(self, player_position):
+        """Get random spawn position around player"""
+        import random
+        import math
+
+        spawn_distance = 600
+        angle = random.uniform(0, 2 * math.pi)
+
+        spawn_x = player_position.x + spawn_distance * math.cos(angle)
+        spawn_y = player_position.y + spawn_distance * math.sin(angle)
+
+        return spawn_x, spawn_y
