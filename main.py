@@ -12,7 +12,7 @@ from src.config import WindowConfig
 def main():
     """Initialize and run the game"""
     pygame.init()
-    # Hide mouse cursor (we have custom crosshair) - NEW!
+    # Hide mouse cursor (we have custom crosshair)
     pygame.mouse.set_visible(False)
     # Create the game window
     screen = pygame.display.set_mode((WindowConfig.WIDTH, WindowConfig.HEIGHT))

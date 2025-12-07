@@ -20,7 +20,7 @@ class Game:
     def __init__(self, screen):
         self.screen = screen
         self.running = True
-        self.paused = False
+        self.paused = True
         self.game_over = False
 
         # Game time tracking
@@ -402,21 +402,47 @@ class Game:
             self._draw_pause_text()
 
     def _draw_pause_text(self):
-        """Draw paused text"""
-        font = pygame.font.Font(None, 74)
-        text = font.render("PAUSED", True, Colors.WHITE)
-        text_rect = text.get_rect(
-            center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2)
-        )
-        self.screen.blit(text, text_rect)
+        """Draw pause text and controls"""
+        # Semi-transparent overlay
+        overlay = pygame.Surface((WindowConfig.WIDTH, WindowConfig.HEIGHT))
+        overlay.set_alpha(128)
+        overlay.fill(Colors.BLACK)
+        self.screen.blit(overlay, (0, 0))
 
-        # Hint text
-        small_font = pygame.font.Font(None, 36)
-        hint = small_font.render("Press ESC to continue", True, Colors.WHITE)
-        hint_rect = hint.get_rect(
-            center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 + 60)
-        )
-        self.screen.blit(hint, hint_rect)
+        # PAUSED title
+        title_font = pygame.font.Font(None, 120)
+        title = title_font.render("PAUSED", True, Colors.YELLOW)
+        title_rect = title.get_rect(center=(WindowConfig.WIDTH // 2, 200))
+        self.screen.blit(title, title_rect)
+
+        # Controls
+        controls_font = pygame.font.Font(None, 36)
+        y_offset = 320
+
+        controls = [
+            "CONTROLS:",
+            "",
+            "WASD / Arrow Keys - Move",
+            "Mouse - Aim",
+            "Spacebar - Dash",
+            "Right Click - Place Bomb",
+            "",
+            "ESC - Resume",
+        ]
+
+        for line in controls:
+            if line == "CONTROLS:":
+                color = Colors.YELLOW
+            elif line == "":
+                y_offset += 10
+                continue
+            else:
+                color = Colors.WHITE
+
+            text = controls_font.render(line, True, color)
+            text_rect = text.get_rect(center=(WindowConfig.WIDTH // 2, y_offset))
+            self.screen.blit(text, text_rect)
+            y_offset += 45
 
     def _draw_game_over(self):
         """Draw game over screen"""
