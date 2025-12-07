@@ -3,8 +3,10 @@ Tank Laser Configuration
 Parameters for Tank enemy laser attacks
 """
 
+from src.config.projectiles import BaseProjectileConfig
 
-class TankLaserConfig:
+
+class TankLaserConfig(BaseProjectileConfig):
     """Tank enemy laser projectile configuration"""
 
     # Shooting behavior
@@ -16,7 +18,7 @@ class TankLaserConfig:
     # Laser projectile
     LASER_SPEED = 800  # pixels per second
     LASER_DAMAGE = 25
-    LASER_LIFETIME = 6.0  # seconds
+    # LASER_LIFETIME = 6.0  # seconds
 
     # Visual
     LASER_LENGTH = 15  # pixels

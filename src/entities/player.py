@@ -9,6 +9,8 @@ from src.config.weapons.bomb import BombConfig
 from src.entities.projectiles import BombProjectile
 import random
 
+from src.logger import logger
+
 
 class Player(pygame.sprite.Sprite):
     """Player character"""
@@ -60,6 +62,12 @@ class Player(pygame.sprite.Sprite):
         self.bomb_count = BombConfig.STARTING_BOMBS
         self.max_bombs = BombConfig.MAX_BOMBS
         self.bomb_cooldown = BombConfig.PLACEMENT_COOLDOWN
+        # Damage invulnerability
+        self.damage_immunity = False
+        self.damage_immunity_timer = 0.0
+        self.damage_immunity_duration = (
+            0.2  # 0.2 seconds after taking damage, not working for over time damage
+        )
 
     def update(self, dt, dx, dy):
         """Update player state"""
@@ -69,7 +77,12 @@ class Player(pygame.sprite.Sprite):
             if self.slow_timer <= 0:
                 self.is_slowed = False
                 self.slow_multiplier = 1.0
-                print("✅ Slow effect ended!")
+                logger.info("✅ Slow effect ended!")
+
+        if self.damage_immunity:
+            self.damage_immunity_timer -= dt
+            if self.damage_immunity_timer <= 0:
+                self.damage_immunity = False
 
         # Update bomb cooldown
         if self.bomb_cooldown > 0:
@@ -118,10 +131,30 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (int(self.position.x), int(self.position.y))
 
     def take_damage(self, damage):
-        """Take damage from enemies"""
+        """
+        Take damage (contact/continuous damage - no immunity frames)
+
+        Args:
+            damage: Amount of damage to take
+
+        Returns:
+            bool: True if player died
+        """
+        # Only skip if invulnerable (dash)
+        if self.invulnerable:
+            return False
+
         self.health -= damage
-        if self.health < 0:
+
+        # Check for death
+        if self.health <= 0:
             self.health = 0
+            from src.logger import logger
+
+            logger.info("💀 Player died!")
+            return True
+
+        return False
 
     def heal(self, amount):
         """Heal the player"""
@@ -199,7 +232,9 @@ class Player(pygame.sprite.Sprite):
         self.is_slowed = True
         self.slow_timer = duration
         self.slow_multiplier = strength
-        print(f"⚠️ SLOWED! Speed reduced to {int(strength * 100)}% for {duration}s")
+        logger.info(
+            f"⚠️ SLOWED! Speed reduced to {int(strength * 100)}% for {duration}s"
+        )
 
     def can_place_bomb(self):
         """Check if player has bombs to place"""
@@ -214,10 +249,10 @@ class Player(pygame.sprite.Sprite):
         """
         if self.bomb_count > 0:
             self.bomb_count -= 1
-            print(f"💣 Bomb placed! Remaining: {self.bomb_count}")
+            logger.info(f"💣 Bomb placed! Remaining: {self.bomb_count}")
             return True
         else:
-            print("⚠️ No bombs remaining!")
+            logger.info("⚠️ No bombs remaining!")
             return False
 
     def add_bombs(self, amount):
@@ -231,7 +266,7 @@ class Player(pygame.sprite.Sprite):
         self.bomb_count = min(self.bomb_count + amount, self.max_bombs)
         added = self.bomb_count - old_count
         if added > 0:
-            print(f"💣 +{added} bomb(s)! Total: {self.bomb_count}")
+            logger.info(f"💣 +{added} bomb(s)! Total: {self.bomb_count}")
 
     def place_bomb(self, projectiles):
         """
@@ -246,12 +281,12 @@ class Player(pygame.sprite.Sprite):
 
         # Check cooldown
         if self.bomb_cooldown > 0:
-            print(f"⏱️ Bomb on cooldown! {self.bomb_cooldown:.1f}s remaining")
+            logger.info(f"⏱️ Bomb on cooldown! {self.bomb_cooldown:.1f}s remaining")
             return False
 
         # Check bomb count
         if self.bomb_count <= 0:
-            print("⚠️ No bombs remaining!")
+            logger.info("⚠️ No bombs remaining!")
             return False
 
         # Calculate position
@@ -267,6 +302,35 @@ class Player(pygame.sprite.Sprite):
         # Decrease bomb count and start cooldown
         self.bomb_count -= 1
         self.bomb_cooldown = BombConfig.PLACEMENT_COOLDOWN  # ✅ Start cooldown!
-        print(f"💣 Bomb placed! Remaining: {self.bomb_count}")
+        logger.info(f"💣 Bomb placed! Remaining: {self.bomb_count}")
+
+        return True
+
+    def take_projectile_damage(self, damage):
+        """
+        Take damage from projectile with immunity frames
+
+        Args:
+            damage: Amount of damage to take
+
+        Returns:
+            bool: True if damage was applied
+        """
+        # Skip if invulnerable (dash) or damage immunity
+        if self.invulnerable or self.damage_immunity:
+            return False
+
+        self.health -= damage
+
+        # Start damage immunity period (prevents multi-hit from projectiles)
+        self.damage_immunity = True
+        self.damage_immunity_timer = self.damage_immunity_duration
+
+        # Check for death
+        if self.health <= 0:
+            self.health = 0
+
+            logger.info("💀 Player died!")
+            return True
 
         return True

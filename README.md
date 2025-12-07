@@ -67,6 +67,7 @@ vampire-survivors-game/
 │   │       └── health_pickup.py
 │   │
 │   ├── systems/                # Game systems
+│   │   ├── wave_system.py    # wave system
 │   │   ├── enemy_spawner.py    # Enemy spawning
 │   │   ├── xp_system.py        # XP & leveling
 │   │   ├── upgrade_system.py   # Upgrade management

@@ -3,8 +3,10 @@ Spread Weapon Configuration
 Parameters for player spread shot weapon
 """
 
+from src.config.projectiles import BaseProjectileConfig
 
-class SpreadWeaponConfig:
+
+class SpreadWeaponConfig(BaseProjectileConfig):
     """Spread weapon configuration"""
 
     # Firing

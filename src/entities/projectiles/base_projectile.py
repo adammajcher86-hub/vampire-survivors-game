@@ -26,8 +26,8 @@ class BaseProjectile(pygame.sprite.Sprite, ABC):
         self.damage = damage
         self.speed = speed
 
-        # Lifetime
-        self.lifetime = lifetime
+        # Lifetime (max age before expiring)
+        self.max_lifetime = lifetime
         self.age = 0.0
 
         # Collision radius (set by subclass)
@@ -44,11 +44,11 @@ class BaseProjectile(pygame.sprite.Sprite, ABC):
         Args:
             dt: Delta time in seconds
         """
-        # Update movement (implemented by subclass)
-        self._update_movement(dt)
-
         # Update age
         self.age += dt
+
+        # Update movement (implemented by subclass)
+        self._update_movement(dt)
 
         # Update rect for collision
         self.rect.center = (int(self.position.x), int(self.position.y))
@@ -65,7 +65,7 @@ class BaseProjectile(pygame.sprite.Sprite, ABC):
 
     def is_expired(self):
         """Check if projectile has expired"""
-        return self.age >= self.lifetime
+        return self.age >= self.max_lifetime  # ✅ Compare to fixed max
 
     def collides_with(self, entity):
         """

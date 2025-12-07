@@ -77,7 +77,3 @@ class SpreadProjectile(BaseProjectile):
         pygame.draw.circle(
             screen, self.color, (int(screen_pos.x), int(screen_pos.y)), self.radius
         )
-
-    def is_expired(self):
-        """Projectile expires after lifetime"""
-        return self.lifetime <= 0

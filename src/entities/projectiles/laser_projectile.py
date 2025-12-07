@@ -30,7 +30,7 @@ class LaserProjectile(BaseProjectile):
             y,
             damage=config.LASER_DAMAGE,
             speed=config.LASER_SPEED,
-            lifetime=config.LASER_LIFETIME,
+            lifetime=config.PROJECTILE_LIFETIME,
         )
 
         # Movement
@@ -56,8 +56,11 @@ class LaserProjectile(BaseProjectile):
         self.beam_end = self.position + (self.direction * self.length / 2)
 
     def update(self, dt):
-        """Update laser position"""
-        self._update_movement(dt)
+        """Update laser position and lifetime"""
+        # Call parent update to handle age tracking
+        super().update(dt)  # ✅ Critical!
+
+        # Update beam points after movement
         self.update_beam_points()
 
     def _update_movement(self, dt):
@@ -112,7 +115,3 @@ class LaserProjectile(BaseProjectile):
             (int(screen_end.x), int(screen_end.y)),
             self.width,
         )
-
-    def is_expired(self):
-        """Laser expires after lifetime"""
-        return self.lifetime <= 0

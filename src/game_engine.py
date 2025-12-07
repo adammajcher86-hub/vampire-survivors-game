@@ -4,14 +4,17 @@ Manages game state, entities, and systems
 """
 
 import pygame
-from src.config import WindowConfig, Colors
+from src.config import WindowConfig, Colors, FastEnemyConfig
 from src.entities import Player, BasicWeapon
 from src.camera import Camera
+from src.logger import logger
 from src.systems import EnemySpawner, XPSystem, UpgradeSystem, PickupManager, WaveSystem
 from src.ui import UpgradeMenu
 from src.config.weapons.bomb import BombConfig
 from src.entities.projectiles import BombProjectile, LaserProjectile
 from src.config.enemies.tank_laser import TankLaserConfig
+from src.config.enemies.fast_laser import FastLaserConfig
+import math
 
 
 class Game:
@@ -155,7 +158,11 @@ class Game:
         # Update all enemies
         for enemy in self.enemies:
             enemy.update(dt, self.player.position)
+        # Check if tanks are ready to shoot
         self._check_enemy_shooting()
+
+        # Check if FastEnemies should explode - NEW!
+        self._check_fast_enemy_explosions()
         # Update all weapons (POLYMORPHIC!)
         for weapon in self.weapons:
             weapon.update(
@@ -204,6 +211,7 @@ class Game:
 
     def _check_projectile_collisions(self):
         """Check and handle projectile-enemy collisions"""
+
         for projectile in list(self.projectiles):
             for enemy in list(self.enemies):
                 if projectile.collides_with(enemy):
@@ -221,6 +229,9 @@ class Game:
 
     def _remove_expired_projectiles(self):
         """Remove projectiles that have exceeded their lifetime"""
+        logger.debug(
+            f"enemy_projectiles {len(self.enemy_projectiles)},player projectiles {len(self.projectiles)} "
+        )
         for projectile in list(self.projectiles):
             if projectile.is_expired():
                 self.projectiles.remove(projectile)
@@ -235,17 +246,40 @@ class Game:
             if enemy.collides_with(self.player):
                 # Don't take damage if invulnerable (during dash)
                 if not self.player.invulnerable:
-                    # Check if it's an Elite doing a dash attack
+                    # Check if it's an enemy doing a dash attack
                     if hasattr(enemy, "is_dashing") and enemy.is_dashing:
-                        # Elite dash hit! Apply slow debuff
-                        self.player.apply_slow(
-                            duration=enemy.dash_slow_duration,
-                            strength=enemy.dash_slow_strength,
-                        )
+                        # Check if this dash hasn't hit yet (to avoid multi-hit)
+                        if (
+                            not hasattr(enemy, "dash_hit_player")
+                            or not enemy.dash_hit_player
+                        ):
+                            # Mark as hit
+                            enemy.dash_hit_player = True
 
-                    # Normal contact damage
-                    damage = enemy.damage * dt
-                    self.player.take_damage(damage)
+                            # Dash deals FULL damage (burst, not over time)
+                            dash_damage = (
+                                enemy.damage * 5
+                            )  # 5x normal damage for dash attack
+                            self.player.take_damage(dash_damage)
+
+                            # Check if this enemy type applies slow debuff (Elite only)
+                            if hasattr(enemy, "dash_slow_duration") and hasattr(
+                                enemy, "dash_slow_strength"
+                            ):
+                                self.player.apply_slow(
+                                    duration=enemy.dash_slow_duration,
+                                    strength=enemy.dash_slow_strength,
+                                )
+
+                            from src.logger import logger
+
+                            logger.info(
+                                f"💥 {enemy.__class__.__name__} dash hit! -{dash_damage} HP"
+                            )
+                    else:
+                        # Normal contact damage (over time)
+                        damage = enemy.damage * dt
+                        self.player.take_damage(damage)
 
     def render(self):
         """Render the game"""
@@ -663,10 +697,11 @@ class Game:
         for projectile in list(self.enemy_projectiles):
             # Check if laser hits player
             if projectile.collides_with(self.player):
-                # Don't damage if player is invulnerable (dashing)
-                if not self.player.invulnerable:
-                    self.player.take_damage(projectile.damage)
-                    print(f"⚡ Player hit by laser! -{projectile.damage} HP")
+                # Use projectile damage method (has immunity)
+                if self.player.take_projectile_damage(projectile.damage):  # ✅ Changed
+                    from src.logger import logger
+
+                    logger.info(f"⚡ Player hit by laser! -{projectile.damage} HP")
 
                 # Remove projectile
                 self.enemy_projectiles.remove(projectile)
@@ -764,3 +799,40 @@ class Game:
                 center=(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2 + 20)
             )
             self.screen.blit(countdown_text, countdown_rect)
+
+    def _check_fast_enemy_explosions(self):
+        """Check for FastEnemy explosions and spawn radial lasers"""
+        for enemy in list(self.enemies):
+            # Check if FastEnemy should explode
+            if hasattr(enemy, "should_explode") and enemy.should_explode():
+                explosion_pos = enemy.get_explosion_position()
+
+                # Spawn 8 lasers in all directions (360° / 8 = 45° apart)
+                laser_count = FastEnemyConfig.EXPLOSION_LASER_COUNT
+
+                for i in range(laser_count):
+                    angle = (i / laser_count) * 2 * math.pi
+
+                    # Calculate direction for this laser
+                    target_offset = pygame.math.Vector2(
+                        math.cos(angle) * 100,  # 100px offset for target
+                        math.sin(angle) * 100,
+                    )
+                    target_pos = explosion_pos + target_offset
+
+                    # Create laser
+                    laser = LaserProjectile(
+                        explosion_pos.x, explosion_pos.y, target_pos, FastLaserConfig
+                    )
+
+                    self.enemy_projectiles.add(laser)
+
+                # Remove enemy (it exploded!)
+                self.enemies_killed += 1
+                self.wave_system.on_enemy_killed()
+                self.pickup_manager.spawn_from_enemy(enemy, self.pickups)
+                self.enemies.remove(enemy)
+
+                from src.logger import logger
+
+                logger.info("💥 FastEnemy EXPLODED! 8 lasers fired!")

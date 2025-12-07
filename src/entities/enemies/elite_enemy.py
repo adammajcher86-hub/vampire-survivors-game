@@ -155,7 +155,7 @@ class EliteEnemy(Enemy):
         """Start the dash (after telegraph)"""
         self.is_dashing = True
         self.dash_timer = self.dash_duration
-        # dash_direction already set during telegraph
+        self.dash_hit_player = False
 
     def render(self, screen, camera):
         """

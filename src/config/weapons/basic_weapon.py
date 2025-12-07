@@ -4,9 +4,10 @@ Starting weapon - uses default settings
 """
 
 from .base_weapon import BaseWeaponConfig
+from src.config.projectiles import BaseProjectileConfig
 
 
-class BasicWeaponConfig(BaseWeaponConfig):
+class BasicWeaponConfig(BaseWeaponConfig, BaseProjectileConfig):
     """Basic weapon settings - uses defaults from base"""
 
     # Uses all default values from BaseWeaponConfig
