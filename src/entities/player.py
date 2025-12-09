@@ -3,12 +3,12 @@ Player Entity
 The main character controlled by the player
 """
 
+import math
 import pygame
-from src.config import PlayerConfig, Colors
+from src.config import PlayerConfig
 from src.config.weapons.bomb import BombConfig
 from src.entities.projectiles import BombProjectile
 import random
-
 from src.logger import logger
 
 
@@ -68,8 +68,47 @@ class Player(pygame.sprite.Sprite):
         self.damage_immunity_duration = (
             0.2  # 0.2 seconds after taking damage, not working for over time damage
         )
+        # Load base sprite (faces UP)
+        self.base_sprite = pygame.image.load(
+            "src/assets/sprites/player_base.png"
+        ).convert_alpha()
+        self.weapon_sprite = pygame.image.load(
+            "src/assets/sprites/weapon_basic.png"
+        ).convert_alpha()
+        self.angle = 0  # Current rotation angle
+        self.rendered_sprite = self.base_sprite
+        # Weapon mount position (offset from player center)
+        self.weapon_mount_offset = pygame.math.Vector2(21, -18)
+        self.weapon_angle = 0  # ✅ Weapon rotation (separate from player)
+        self.rendered_weapon = self.weapon_sprite
 
-    def update(self, dt, dx, dy):
+    def get_weapon_tip_position(self):
+        """
+        Calculate the tip of the weapon (where bullets spawn)
+
+        Returns:
+            Vector2: World position of weapon tip
+        """
+
+        # Get weapon mount position
+        weapon_mount = self._get_weapon_world_position()
+
+        # Weapon barrel length (distance from mount to tip)
+        # Your weapon sprite is 32x16, pivot at (8,8), tip at ~(30,8)
+        # So barrel length is about 22 pixels from pivot
+        barrel_length = 22
+
+        # Calculate tip position based on weapon rotation
+        weapon_angle_rad = math.radians(self.weapon_angle)
+
+        tip_offset_x = barrel_length * math.cos(weapon_angle_rad)
+        tip_offset_y = barrel_length * math.sin(weapon_angle_rad)
+
+        return pygame.math.Vector2(
+            weapon_mount.x + tip_offset_x, weapon_mount.y + tip_offset_y
+        )
+
+    def update(self, dt, dx, dy, mouse_world_pos, nearest_enemy_pos):
         """Update player state"""
         # Update debuff timers
         if self.is_slowed:
@@ -130,6 +169,58 @@ class Player(pygame.sprite.Sprite):
         # Update rect for collision
         self.rect.center = (int(self.position.x), int(self.position.y))
 
+        if mouse_world_pos:
+            # Calculate vector from player to mouse
+            delta_x = mouse_world_pos.x - self.position.x
+            delta_y = mouse_world_pos.y - self.position.y
+
+            # Calculate angle (atan2 returns angle where 0° = East/Right)
+            # Subtract 90° because sprite faces UP (North) by default
+            angle_rad = math.atan2(delta_y, delta_x)
+            self.angle = math.degrees(angle_rad) - 90 + 180
+
+            # Rotate sprite (negative because pygame rotates counter-clockwise)
+            self.rendered_sprite = pygame.transform.rotate(
+                self.base_sprite, -self.angle
+            )
+        if nearest_enemy_pos:
+            self.set_weapon_target(nearest_enemy_pos)
+        elif mouse_world_pos:
+            self.set_weapon_target(mouse_world_pos)
+
+    def set_weapon_target(self, target_pos):
+        """Set weapon aim target (called from game_engine)"""
+        if target_pos:
+            # Get weapon world position
+            weapon_world_pos = self._get_weapon_world_position()
+
+            # Calculate angle from weapon to target
+            delta_x = target_pos.x - weapon_world_pos.x
+            delta_y = target_pos.y - weapon_world_pos.y
+
+            # Calculate angle (0° = right, 90° = down, etc.)
+            angle_rad = math.atan2(delta_y, delta_x)
+            self.weapon_angle = math.degrees(angle_rad)
+            # Rotate weapon sprite
+            self.rendered_weapon = pygame.transform.rotate(
+                self.weapon_sprite, -self.weapon_angle
+            )
+
+    def _get_weapon_world_position(self):
+        """Calculate weapon position in world coordinates"""
+        # Rotate weapon mount offset by player body angle
+        angle_rad = math.radians(self.angle)
+
+        rotated_x = self.weapon_mount_offset.x * math.cos(
+            angle_rad
+        ) - self.weapon_mount_offset.y * math.sin(angle_rad)
+        rotated_y = self.weapon_mount_offset.x * math.sin(
+            angle_rad
+        ) + self.weapon_mount_offset.y * math.cos(angle_rad)
+        return pygame.math.Vector2(
+            self.position.x + rotated_x, self.position.y + rotated_y
+        )
+
     def take_damage(self, damage):
         """
         Take damage (contact/continuous damage - no immunity frames)
@@ -166,24 +257,23 @@ class Player(pygame.sprite.Sprite):
 
     def render(self, screen, camera):
         """Draw the player"""
-        screen_pos = camera.apply(self.position)
 
-        # Draw player as a circle
+        rect = self.rendered_sprite.get_rect(center=camera.apply(self.position))
+        screen.blit(self.rendered_sprite, rect)
+
+        weapon_world_pos = self._get_weapon_world_position()
+        weapon_screen_pos = camera.apply(weapon_world_pos)
+        weapon_rect = self.rendered_weapon.get_rect(center=weapon_screen_pos)
+        screen.blit(self.rendered_weapon, weapon_rect)
+
+        weapon_tip = self.get_weapon_tip_position()
+        weapon_tip_screen = camera.apply(weapon_tip)
         pygame.draw.circle(
-            screen, self.color, (int(screen_pos.x), int(screen_pos.y)), self.radius
+            screen,
+            (255, 255, 0),
+            (int(weapon_tip_screen.x), int(weapon_tip_screen.y)),
+            3,
         )
-
-        # Draw directional indicator
-        if self.velocity.length() > 0:
-            direction = self.velocity.normalize()
-            end_pos = screen_pos + direction * (self.radius + 10)
-            pygame.draw.line(
-                screen,
-                Colors.WHITE,
-                (int(screen_pos.x), int(screen_pos.y)),
-                (int(end_pos.x), int(end_pos.y)),
-                3,
-            )
 
     def try_dash(self, dx, dy):
         """

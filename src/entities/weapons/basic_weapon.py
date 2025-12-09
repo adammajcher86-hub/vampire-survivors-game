@@ -26,24 +26,19 @@ class BasicWeapon(BaseWeapon):
         self.projectile_size = BasicWeaponConfig.PROJECTILE_SIZE
 
     def fire(self, player, target, projectiles):
-        """
-        Fire single projectile at target
+        """Fire projectile at target"""
+        if not target:
+            return
 
-        Args:
-            player: Player entity (source position)
-            target: Target enemy
-            projectiles: Sprite group to add projectile to
-        """
-        # Create basic projectile aimed at target
+        weapon_tip = player.get_weapon_tip_position()
+
+        # Pass TARGET POSITION, not direction! ✅
         projectile = BasicProjectile(
-            player.position.x,
-            player.position.y,
-            target.position,
-            damage=self.damage,
-            speed=self.projectile_speed,
-            color=self.projectile_color,
-            size=self.projectile_size,
+            weapon_tip.x,
+            weapon_tip.y,
+            target.position,  # ✅ Pass position, not direction!
         )
+
         projectiles.add(projectile)
 
     def get_name(self):

@@ -15,6 +15,7 @@ from src.entities.projectiles import BombProjectile, LaserProjectile
 from src.config.enemies.tank_laser import TankLaserConfig
 from src.config.enemies.fast_laser import FastLaserConfig
 import math
+from src.config.weapons.spread_weapon import SpreadWeaponConfig
 
 
 class Game:
@@ -141,9 +142,14 @@ class Game:
         dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (
             keys[pygame.K_w] or keys[pygame.K_UP]
         )
-
+        nearest_enemy_pos = None
+        if self.enemies:
+            nearest_enemy = min(
+                self.enemies, key=lambda e: self.player.position.distance_to(e.position)
+            )
+            nearest_enemy_pos = nearest_enemy.position
         # Update player
-        self.player.update(dt, dx, dy)
+        self.player.update(dt, dx, dy, self.mouse_world_pos, nearest_enemy_pos)
 
         # Update camera to follow player
         self.camera.update(self.player)
@@ -161,7 +167,7 @@ class Game:
         # Check if tanks are ready to shoot
         self._check_enemy_shooting()
 
-        # Check if FastEnemies should explode - NEW!
+        # Check if FastEnemies should explode
         self._check_fast_enemy_explosions()
         # Update all weapons (POLYMORPHIC!)
         for weapon in self.weapons:
@@ -270,8 +276,6 @@ class Game:
                                     duration=enemy.dash_slow_duration,
                                     strength=enemy.dash_slow_strength,
                                 )
-
-                            from src.logger import logger
 
                             logger.info(
                                 f"💥 {enemy.__class__.__name__} dash hit! -{dash_damage} HP"
@@ -708,16 +712,6 @@ class Game:
 
     def _render_crosshair(self):
         """Render mouse crosshair for aiming"""
-        # Only show crosshair if player has spread weapon
-        has_spread_weapon = any(
-            weapon.__class__.__name__ == "SpreadWeapon" for weapon in self.weapons
-        )
-
-        if not has_spread_weapon:
-            return
-
-        from src.config.weapons.spread_weapon import SpreadWeaponConfig
-
         # Get mouse position (screen space)
         mouse_x, mouse_y = int(self.mouse_screen_pos.x), int(self.mouse_screen_pos.y)
 

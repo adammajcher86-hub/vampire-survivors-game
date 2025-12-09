@@ -48,47 +48,26 @@ class BaseWeapon(ABC):
                 self.cooldown_timer = self.cooldown
 
     def _try_fire(self, player, enemies, projectiles):
-        """
-        Attempt to fire weapon
-
-        Args:
-            player: Player entity
-            enemies: Sprite group of enemies
-            projectiles: Sprite group to add projectiles to
-
-        Returns:
-            bool: True if weapon fired
-        """
-        # Find target (subclasses can override this)
+        """Attempt to fire weapon"""
         target = self._find_target(player, enemies)
 
         if target:
-            # Fire weapon (implemented by subclass)
             self.fire(player, target, projectiles)
             return True
 
         return False
 
     def _find_target(self, player, enemies):
-        """
-        Find the closest enemy within range
-
-        Args:
-            player: Player entity
-            enemies: Sprite group of enemies
-
-        Returns:
-            Enemy or None: Closest enemy within range
-        """
+        """Find the closest enemy within range"""
         closest_enemy = None
         closest_distance = self.range
 
         for enemy in enemies:
             distance = player.position.distance_to(enemy.position)
+
             if distance < closest_distance:
                 closest_distance = distance
                 closest_enemy = enemy
-
         return closest_enemy
 
     @abstractmethod
