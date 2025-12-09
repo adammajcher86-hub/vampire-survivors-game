@@ -1,58 +1,42 @@
 """
 New Weapon Upgrade
-Adds a new weapon to player's arsenal
+Adds new weapon to player's weapon slots
 """
 
 from src.upgrades.base_upgrade import BaseUpgrade
 
 
 class NewWeaponUpgrade(BaseUpgrade):
-    """Upgrade that adds a new weapon"""
+    """Add new weapon to player"""
 
-    def __init__(self, weapon_name, weapon_class):
+    def __init__(self, weapon_class, weapon_name):
         """
         Initialize new weapon upgrade
 
         Args:
-            weapon_name: Display name of weapon
-            weapon_class: Class to instantiate (e.g., BasicWeapon)
+            weapon_class: Class of weapon to add (e.g., BasicWeapon)
+            weapon_name: Display name
         """
         super().__init__(
             name=f"New Weapon: {weapon_name}",
-            description=f"Unlock {weapon_name}",
-            icon_text="🔫",
+            description=f"Add {weapon_name} to weapon slot",
+            icon_text="⚔️",
         )
-        self.weapon_name = weapon_name
         self.weapon_class = weapon_class
+        self.weapon_name = weapon_name
 
-    def can_apply(self, player, weapons):
-        """
-        Check if weapon can be added
+    def can_apply(self, player):
+        """Check if player has empty weapon slot"""
+        return player.get_empty_slot_count() > 0
 
-        Args:
-            player: Player entity
-            weapons: List of player weapons
+    def apply(self, player):
+        """Add weapon to empty slot"""
+        weapon = self.weapon_class()
 
-        Returns:
-            bool: True if player doesn't already have this weapon
-        """
-        # Check if player already has this weapon type
-        for weapon in weapons:
-            if isinstance(weapon, self.weapon_class):
-                return False
-        return True
+        if player.add_weapon(weapon):
+            from src.logger import logger
 
-    def apply(self, player, weapons):
-        """
-        Add the new weapon
+            logger.info(f"⚔️ Added {self.weapon_name} to weapon slot!")
+            return True
 
-        Args:
-            player: Player entity
-            weapons: List of player weapons
-
-        Returns:
-            str: Success message
-        """
-        new_weapon = self.weapon_class()
-        weapons.append(new_weapon)
-        return f"Unlocked {self.weapon_name}!"
+        return False

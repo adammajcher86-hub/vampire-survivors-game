@@ -10,6 +10,8 @@ from src.config.weapons.bomb import BombConfig
 from src.entities.projectiles import BombProjectile
 import random
 from src.logger import logger
+from src.systems.weapon_slot import WeaponSlot
+from src.entities.weapons.basic_weapon import BasicWeapon
 
 
 class Player(pygame.sprite.Sprite):
@@ -26,7 +28,7 @@ class Player(pygame.sprite.Sprite):
         self.speed = PlayerConfig.SPEED
         self.health_regen = PlayerConfig.HEALTH_REGEN
         self.attack_speed_multiplier = 1.0
-        self.hp_regen = 0.5
+        self.hp_regen = 1
 
         # Visual properties
         self.size = PlayerConfig.SIZE
@@ -81,6 +83,23 @@ class Player(pygame.sprite.Sprite):
         self.weapon_mount_offset = pygame.math.Vector2(21, -18)
         self.weapon_angle = 0  # ✅ Weapon rotation (separate from player)
         self.rendered_weapon = self.weapon_sprite
+
+        self.weapon_slots = [
+            WeaponSlot(mount_offset=(20, -18)),  # Top-right
+            WeaponSlot(mount_offset=(-20, -19)),  # Top-left
+            WeaponSlot(mount_offset=(20, 14)),  # Bottom-right
+            WeaponSlot(mount_offset=(-20, 13)),  # Bottom-left
+        ]
+
+        self.max_weapon_slots = 4
+
+        # Load weapon sprite (shared by all basic weapons)
+        self.weapon_sprite = pygame.image.load(
+            "src/assets/sprites/weapon_basic.png"
+        ).convert_alpha()
+
+        # Start with one basic weapon in first slot
+        self.add_weapon(BasicWeapon())
 
     def get_weapon_tip_position(self):
         """
@@ -183,10 +202,6 @@ class Player(pygame.sprite.Sprite):
             self.rendered_sprite = pygame.transform.rotate(
                 self.base_sprite, -self.angle
             )
-        if nearest_enemy_pos:
-            self.set_weapon_target(nearest_enemy_pos)
-        elif mouse_world_pos:
-            self.set_weapon_target(mouse_world_pos)
 
     def set_weapon_target(self, target_pos):
         """Set weapon aim target (called from game_engine)"""
@@ -256,24 +271,23 @@ class Player(pygame.sprite.Sprite):
         return self.health > 0
 
     def render(self, screen, camera):
-        """Draw the player"""
+        """Render player with all equipped weapons"""
+        # Render player body
+        body_rect = self.rendered_sprite.get_rect(center=camera.apply(self.position))
+        screen.blit(self.rendered_sprite, body_rect)
 
-        rect = self.rendered_sprite.get_rect(center=camera.apply(self.position))
-        screen.blit(self.rendered_sprite, rect)
-
-        weapon_world_pos = self._get_weapon_world_position()
-        weapon_screen_pos = camera.apply(weapon_world_pos)
-        weapon_rect = self.rendered_weapon.get_rect(center=weapon_screen_pos)
-        screen.blit(self.rendered_weapon, weapon_rect)
-
-        weapon_tip = self.get_weapon_tip_position()
-        weapon_tip_screen = camera.apply(weapon_tip)
-        pygame.draw.circle(
-            screen,
-            (255, 255, 0),
-            (int(weapon_tip_screen.x), int(weapon_tip_screen.y)),
-            3,
-        )
+        # Render all equipped weapons ✅
+        for slot in self.weapon_slots:
+            if not slot.is_empty() and slot.rendered_weapon:
+                weapon_pos = slot.get_world_position(self)
+                weapon_screen_pos = camera.apply(weapon_pos)
+                weapon_rect = slot.rendered_weapon.get_rect(center=weapon_screen_pos)
+                screen.blit(slot.rendered_weapon, weapon_rect)
+        # DEBUG: Draw collision box (remove in production) 🔍
+        # player_screen = camera.apply(self.position)
+        # pygame.draw.circle(screen, (255, 0, 0),
+        #                   (int(player_screen.x), int(player_screen.y)),
+        #                  self.radius, 2)
 
     def try_dash(self, dx, dy):
         """
@@ -424,3 +438,42 @@ class Player(pygame.sprite.Sprite):
             return True
 
         return True
+
+    def add_weapon(self, weapon):
+        """
+        Add weapon to next available slot
+
+        Args:
+            weapon: Weapon instance to add
+
+        Returns:
+            bool: True if added successfully, False if all slots full
+        """
+        for slot in self.weapon_slots:
+            if slot.is_empty():
+                slot.equip_weapon(weapon, self.weapon_sprite)
+                logger.info(f"⚔️ {weapon.get_name()} equipped to slot!")
+                return True
+
+        logger.warning("❌ All weapon slots full!")
+        return False
+
+    def has_weapon_type(self, weapon_class):
+        """Check if player has any weapon of this type"""
+        return any(
+            isinstance(slot.weapon, weapon_class)
+            for slot in self.weapon_slots
+            if not slot.is_empty()
+        )
+
+    def count_weapon_type(self, weapon_class):
+        """Count how many weapons of this type player has"""
+        return sum(
+            1
+            for slot in self.weapon_slots
+            if not slot.is_empty() and isinstance(slot.weapon, weapon_class)
+        )
+
+    def get_empty_slot_count(self):
+        """Get number of empty weapon slots"""
+        return sum(1 for slot in self.weapon_slots if slot.is_empty())

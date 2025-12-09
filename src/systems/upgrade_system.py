@@ -5,7 +5,7 @@ Manages available upgrades and generates choices for level-up
 
 import random
 from src.upgrades import WeaponLevelUpgrade, StatUpgrade, NewWeaponUpgrade
-from src.entities.weapons import SpreadWeapon
+from src.entities.weapons import BasicWeapon, SpreadWeapon
 
 
 class UpgradeSystem:
@@ -49,17 +49,18 @@ class UpgradeSystem:
             ]
         )
 
-        # TODO: Add more weapon upgrades when you create new weapons
-        # Example:
-        self.available_upgrades.append(NewWeaponUpgrade("Spread Shot", SpreadWeapon))
+        # Weapon upgrades
+        self.available_upgrades.append(
+            NewWeaponUpgrade(BasicWeapon, "Basic Weapon")  # Can add multiple!
+        )
+        self.available_upgrades.append(NewWeaponUpgrade(SpreadWeapon, "Spread Shot"))
 
-    def generate_choices(self, player, weapons, num_choices=3):
+    def generate_choices(self, player, num_choices=3):
         """
         Generate random upgrade choices
 
         Args:
             player: Player entity
-            weapons: List of player weapons
             num_choices: Number of choices to offer (default 3)
 
         Returns:
@@ -69,7 +70,7 @@ class UpgradeSystem:
         valid_upgrades = [
             upgrade
             for upgrade in self.available_upgrades
-            if upgrade.can_apply(player, weapons)
+            if upgrade.can_apply(player)  # ✅ Only pass player
         ]
 
         # If not enough valid upgrades, return what we have
@@ -79,16 +80,15 @@ class UpgradeSystem:
         # Randomly select num_choices upgrades
         return random.sample(valid_upgrades, num_choices)
 
-    def apply_upgrade(self, upgrade, player, weapons):
+    def apply_upgrade(self, upgrade, player):
         """
         Apply selected upgrade
 
         Args:
             upgrade: Upgrade instance to apply
             player: Player entity
-            weapons: List of player weapons
 
         Returns:
             str: Message describing what was upgraded
         """
-        return upgrade.apply(player, weapons)
+        return upgrade.apply(player)  # ✅ Only pass player

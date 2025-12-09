@@ -27,17 +27,19 @@ class WeaponLevelUpgrade(BaseUpgrade):
         )
         self.weapon_class = weapon_class
 
-    def can_apply(self, player, weapons):
+    def can_apply(self, player):
         """
         Check if any weapon can be leveled up
 
         Args:
             player: Player entity
-            weapons: List of player weapons
 
         Returns:
             bool: True if at least one weapon can level up
         """
+        # Get weapons from player's weapon slots ✅
+        weapons = [slot.weapon for slot in player.weapon_slots if not slot.is_empty()]
+
         if not weapons:
             return False
 
@@ -54,17 +56,19 @@ class WeaponLevelUpgrade(BaseUpgrade):
                 return True
         return False
 
-    def apply(self, player, weapons):
+    def apply(self, player):
         """
         Level up a weapon
 
         Args:
             player: Player entity
-            weapons: List of player weapons
 
         Returns:
             str: Success message
         """
+        # Get weapons from player's weapon slots ✅
+        weapons = [slot.weapon for slot in player.weapon_slots if not slot.is_empty()]
+
         # Find weapon to level up
         target_weapon = None
 

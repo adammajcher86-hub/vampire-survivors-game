@@ -21,22 +21,43 @@ class SpreadWeapon(BaseWeapon):
             projectile_speed=SpreadWeaponConfig.PROJECTILE_SPEED,
             range=SpreadWeaponConfig.PROJECTILE_LIFETIME
             * SpreadWeaponConfig.PROJECTILE_SPEED,
+            level=1,
+            auto_aim=False,
         )
         self.cooldown = SpreadWeaponConfig.FIRE_COOLDOWN
         self.cooldown_timer = 0.0
         self.level = 1
 
-    def fire(self, player, target, projectiles):
+    def fire_from_position(self, weapon_tip, target_pos, projectiles):
         """
-        Fire method (required by BaseWeapon)
-        Not used - SpreadWeapon uses update() with mouse position instead
+        Fire spread projectiles from weapon tip toward target
 
         Args:
-            player: Player entity
-            target: Target entity (not used)
-            projectiles: Projectile sprite group
+            weapon_tip: Vector2 position to fire from
+            target_pos: Vector2 position to fire toward (mouse)
+            projectiles: Sprite group
         """
-        pass  # SpreadWeapon handles firing in update() method
+        # Calculate base direction to target
+        base_direction = target_pos - weapon_tip
+        if base_direction.length() > 0:
+            base_direction = base_direction.normalize()
+
+        base_angle = math.atan2(base_direction.y, base_direction.x)
+
+        # Fire spread projectiles
+        half_spread = math.radians(SpreadWeaponConfig.SPREAD_ANGLE / 2)
+        for i in range(SpreadWeaponConfig.PROJECTILE_COUNT):
+            angle_offset = (
+                (i / (SpreadWeaponConfig.PROJECTILE_COUNT - 1) - 0.5) * 2 * half_spread
+            )
+            shot_angle = base_angle + angle_offset
+
+            shot_direction = pygame.math.Vector2(
+                math.cos(shot_angle), math.sin(shot_angle)
+            )
+
+            projectile = SpreadProjectile(weapon_tip.x, weapon_tip.y, shot_direction)
+            projectiles.add(projectile)
 
     def update(self, dt, player, enemies, projectiles, mouse_world_pos=None):
         """

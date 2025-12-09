@@ -10,7 +10,7 @@ class PlayerConfig:
     """Player character settings"""
 
     # Stats
-    SIZE = 32
+    SIZE = 50
     SPEED = 200
     MAX_HEALTH = 100
     HEALTH_REGEN = 0.5  # HP per second

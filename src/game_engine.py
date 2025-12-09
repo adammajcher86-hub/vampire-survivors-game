@@ -150,6 +150,17 @@ class Game:
             nearest_enemy_pos = nearest_enemy.position
         # Update player
         self.player.update(dt, dx, dy, self.mouse_world_pos, nearest_enemy_pos)
+        # Update all weapon slots
+        for slot in self.player.weapon_slots:
+            if not slot.is_empty():
+                slot.update(
+                    dt,
+                    self.player,
+                    self.enemies,
+                    self.projectiles,
+                    self.mouse_world_pos,
+                    nearest_enemy_pos,
+                )
 
         # Update camera to follow player
         self.camera.update(self.player)
@@ -170,10 +181,10 @@ class Game:
         # Check if FastEnemies should explode
         self._check_fast_enemy_explosions()
         # Update all weapons (POLYMORPHIC!)
-        for weapon in self.weapons:
-            weapon.update(
-                dt, self.player, self.enemies, self.projectiles, self.mouse_world_pos
-            )
+        # for weapon in self.weapons:
+        #    weapon.update(
+        #        dt, self.player, self.enemies, self.projectiles, self.mouse_world_pos
+        #   )
 
         # Update projectiles
         for projectile in self.projectiles:
@@ -516,9 +527,7 @@ class Game:
     def _show_upgrade_menu(self):
         """Show upgrade menu when player levels up"""
         # Generate 3 random upgrade choices
-        choices = self.upgrade_system.generate_choices(
-            self.player, self.weapons, num_choices=3
-        )
+        choices = self.upgrade_system.generate_choices(self.player, 3)
 
         # Show menu and pause game
         self.upgrade_menu.show(choices)
@@ -534,9 +543,7 @@ class Game:
         """
         if choice_index < len(self.upgrade_menu.choices):
             upgrade = self.upgrade_menu.choices[choice_index]
-            message = self.upgrade_system.apply_upgrade(
-                upgrade, self.player, self.weapons
-            )
+            message = self.upgrade_system.apply_upgrade(upgrade, self.player)
 
             print(f"Upgrade applied: {message}")
 

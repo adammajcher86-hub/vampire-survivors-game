@@ -19,26 +19,23 @@ class BasicWeapon(BaseWeapon):
             projectile_speed=BasicWeaponConfig.PROJECTILE_SPEED,
             range=BasicWeaponConfig.RANGE,
             level=1,
+            auto_aim=True,
         )
 
         # Visual properties
         self.projectile_color = BasicWeaponConfig.PROJECTILE_COLOR
         self.projectile_size = BasicWeaponConfig.PROJECTILE_SIZE
 
-    def fire(self, player, target, projectiles):
-        """Fire projectile at target"""
-        if not target:
-            return
+    def fire_from_position(self, weapon_tip, target_pos, projectiles):
+        """
+        Fire projectile from weapon tip toward target
 
-        weapon_tip = player.get_weapon_tip_position()
-
-        # Pass TARGET POSITION, not direction! ✅
-        projectile = BasicProjectile(
-            weapon_tip.x,
-            weapon_tip.y,
-            target.position,  # ✅ Pass position, not direction!
-        )
-
+        Args:
+            weapon_tip: Vector2 position to fire from
+            target_pos: Vector2 position to fire toward
+            projectiles: Sprite group
+        """
+        projectile = BasicProjectile(weapon_tip.x, weapon_tip.y, target_pos)
         projectiles.add(projectile)
 
     def get_name(self):

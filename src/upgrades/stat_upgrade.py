@@ -34,13 +34,12 @@ class StatUpgrade(BaseUpgrade):
         self.amount = amount
         self.is_percentage = is_percentage
 
-    def can_apply(self, player, weapons):
+    def can_apply(self, player):
         """
         Check if stat upgrade can be applied
 
         Args:
             player: Player entity
-            weapons: List of player weapons
 
         Returns:
             bool: Always True (stats can always be upgraded)
@@ -48,13 +47,12 @@ class StatUpgrade(BaseUpgrade):
         # Could add max limits here if needed
         return True
 
-    def apply(self, player, weapons):
+    def apply(self, player):
         """
         Apply stat boost to player
 
         Args:
             player: Player entity
-            weapons: List of player weapons
 
         Returns:
             str: Success message
