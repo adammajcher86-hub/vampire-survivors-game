@@ -142,14 +142,8 @@ class Game:
         dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (
             keys[pygame.K_w] or keys[pygame.K_UP]
         )
-        nearest_enemy_pos = None
-        if self.enemies:
-            nearest_enemy = min(
-                self.enemies, key=lambda e: self.player.position.distance_to(e.position)
-            )
-            nearest_enemy_pos = nearest_enemy.position
         # Update player
-        self.player.update(dt, dx, dy, self.mouse_world_pos, nearest_enemy_pos)
+        self.player.update(dt, dx, dy, self.mouse_world_pos)
         # Update all weapon slots
         for slot in self.player.weapon_slots:
             if not slot.is_empty():
@@ -159,7 +153,6 @@ class Game:
                     self.enemies,
                     self.projectiles,
                     self.mouse_world_pos,
-                    nearest_enemy_pos,
                 )
 
         # Update camera to follow player

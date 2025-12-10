@@ -76,7 +76,8 @@ class BaseWeapon(ABC):
         Returns:
             bool: True if fired
         """
-        target = self._find_target(player, enemies)
+        # Find target from WEAPON TIP position, not player center! ✅
+        target = self._find_target_from_position(weapon_tip, enemies)
 
         if target:
             self.fire_from_position(weapon_tip, target.position, projectiles)
@@ -99,28 +100,6 @@ class BaseWeapon(ABC):
         """
         self.fire_from_position(weapon_tip, mouse_world_pos, projectiles)
         return True
-
-    def _find_target(self, player, enemies):
-        """
-        Find the closest enemy within range
-
-        Args:
-            player: Player entity
-            enemies: Sprite group of enemies
-
-        Returns:
-            Enemy or None: Closest enemy within range
-        """
-        closest_enemy = None
-        closest_distance = self.range
-
-        for enemy in enemies:
-            distance = player.position.distance_to(enemy.position)
-            if distance < closest_distance:
-                closest_distance = distance
-                closest_enemy = enemy
-
-        return closest_enemy
 
     @abstractmethod
     def fire_from_position(self, weapon_tip, target_pos, projectiles):
@@ -148,3 +127,25 @@ class BaseWeapon(ABC):
     def get_name(self):
         """Get weapon name - should be overridden"""
         return self.__class__.__name__
+
+    def _find_target_from_position(self, position, enemies):
+        """
+        Find the closest enemy within range from specific position
+
+        Args:
+            position: Vector2 position to measure from (weapon tip)
+            enemies: Sprite group of enemies
+
+        Returns:
+            Enemy or None: Closest enemy within range
+        """
+        closest_enemy = None
+        closest_distance = self.range
+
+        for enemy in enemies:
+            distance = position.distance_to(enemy.position)
+            if distance < closest_distance:
+                closest_distance = distance
+                closest_enemy = enemy
+
+        return closest_enemy

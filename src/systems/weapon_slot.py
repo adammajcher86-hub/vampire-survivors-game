@@ -90,9 +90,7 @@ class WeaponSlot:
             mount_pos.x + tip_offset_x, mount_pos.y + tip_offset_y
         )
 
-    def update(
-        self, dt, player, enemies, projectiles, mouse_world_pos, nearest_enemy_pos
-    ):
+    def update(self, dt, player, enemies, projectiles, mouse_world_pos):
         """
         Update weapon in this slot
 
@@ -109,7 +107,9 @@ class WeaponSlot:
 
         # Update weapon rotation
         mount_pos = self.get_world_position(player)
-
+        nearest_enemy_pos = None
+        if enemies and hasattr(self.weapon, "auto_aim") and self.weapon.auto_aim:
+            nearest_enemy_pos = self._find_nearest_enemy(mount_pos, enemies)
         if hasattr(self.weapon, "auto_aim") and self.weapon.auto_aim:
             # Auto-aim: Rotate toward nearest enemy ✅
             if nearest_enemy_pos:
@@ -154,3 +154,28 @@ class WeaponSlot:
 
         # This is handled by Player.render() to maintain draw order
         pass
+
+    def _find_nearest_enemy(self, position, enemies):
+        """
+        Find nearest enemy to this weapon's position
+
+        Args:
+            position: Vector2 position to measure from (weapon mount)
+            enemies: Enemy sprite group
+
+        Returns:
+            Vector2: Position of nearest enemy, or None
+        """
+        if not enemies:
+            return None
+
+        nearest_enemy = None
+        nearest_distance = float("inf")
+
+        for enemy in enemies:
+            distance = position.distance_to(enemy.position)
+            if distance < nearest_distance:
+                nearest_distance = distance
+                nearest_enemy = enemy
+
+        return nearest_enemy.position if nearest_enemy else None

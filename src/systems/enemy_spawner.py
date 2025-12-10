@@ -6,7 +6,7 @@ Handles spawning of enemies around the player
 import random
 import math
 from src.config import SpawnManagerConfig
-from src.entities import BasicEnemy, FastEnemy, TankEnemy, EliteEnemy
+from src.entities.enemies import BasicEnemy, FastEnemy, TankEnemy, EliteEnemy
 
 
 class EnemySpawner:
@@ -85,6 +85,7 @@ class EnemySpawner:
         Returns:
             Enemy instance
         """
+
         roll = random.random()
 
         if roll < SpawnManagerConfig.BASIC_ENEMY_CHANCE:

@@ -127,7 +127,7 @@ class Player(pygame.sprite.Sprite):
             weapon_mount.x + tip_offset_x, weapon_mount.y + tip_offset_y
         )
 
-    def update(self, dt, dx, dy, mouse_world_pos, nearest_enemy_pos):
+    def update(self, dt, dx, dy, mouse_world_pos):
         """Update player state"""
         # Update debuff timers
         if self.is_slowed:
