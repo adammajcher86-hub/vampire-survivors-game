@@ -26,6 +26,9 @@ class BasicWeapon(BaseWeapon):
         self.projectile_color = BasicWeaponConfig.PROJECTILE_COLOR
         self.projectile_size = BasicWeaponConfig.PROJECTILE_SIZE
 
+        # ✅ Uses default animation (inherited from BaseWeapon)
+        # No need to override get_animation_sprite_path()
+
     def fire_from_position(self, weapon_tip, target_pos, projectiles):
         """
         Fire projectile from weapon tip toward target

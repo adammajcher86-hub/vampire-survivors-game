@@ -27,6 +27,11 @@ class SpreadWeapon(BaseWeapon):
         self.cooldown = SpreadWeaponConfig.FIRE_COOLDOWN
         self.cooldown_timer = 0.0
         self.level = 1
+        # ✅ For now, use same animation
+        # Later you can create spread_weapon_firing.png and override:
+
+    def get_animation_sprite_path(self):
+        return "src/assets/sprites/spread_weapon_firing.png"
 
     def fire_from_position(self, weapon_tip, target_pos, projectiles):
         """

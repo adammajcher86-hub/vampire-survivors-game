@@ -5,6 +5,7 @@ Manages individual weapon slots with mount positions
 
 import pygame
 import math
+from src.logger import logger
 
 
 class WeaponSlot:
@@ -22,22 +23,41 @@ class WeaponSlot:
         self.weapon_sprite = None  # Visual weapon sprite
         self.weapon_angle = 0  # Current weapon rotation
         self.rendered_weapon = None  # Rotated weapon sprite
+        self.weapon_animation = None
 
     def is_empty(self):
         """Check if slot is empty"""
         return self.weapon is None
 
     def equip_weapon(self, weapon, weapon_sprite):
-        """
-        Equip weapon to this slot
+        """Equip weapon to this slot"""
+        from src.systems.weapon_animation import WeaponFireAnimation
 
-        Args:
-            weapon: Weapon instance
-            weapon_sprite: Pygame surface for weapon visual
-        """
         self.weapon = weapon
         self.weapon_sprite = weapon_sprite
         self.rendered_weapon = weapon_sprite
+
+        # ✅ Load animation based on weapon type (polymorphism!)
+        animation_path = weapon.get_animation_sprite_path()
+
+        if animation_path:
+            try:
+                config = weapon.get_animation_config()
+                self.weapon_animation = WeaponFireAnimation(
+                    animation_path,
+                    frame_width=config["frame_width"],
+                    frame_height=config["frame_height"],
+                    frame_count=config["frame_count"],
+                )
+            except Exception:
+                logger.warning("⚠️ Failed to load weapon animation: {e}")
+                self.weapon_animation = None
+        else:
+            self.weapon_animation = None
+
+        # Set callback
+        if self.weapon:
+            self.weapon.set_fire_callback(self.trigger_fire_animation)
 
     def unequip_weapon(self):
         """Remove weapon from slot"""
@@ -91,55 +111,69 @@ class WeaponSlot:
         )
 
     def update(self, dt, player, enemies, projectiles, mouse_world_pos):
-        """
-        Update weapon in this slot
-
-        Args:
-            dt: Delta time
-            player: Player entity
-            enemies: Enemy sprite group
-            projectiles: Projectile sprite group
-            mouse_world_pos: Mouse world position
-            nearest_enemy_pos: Nearest enemy position (for auto-aim)
-        """
+        """Update weapon in this slot"""
         if not self.weapon:
             return
 
-        # Update weapon rotation
+        # Update fire animation ✅
+        if self.weapon_animation:
+            self.weapon_animation.update(dt)
+
+        # Get this weapon's mount position
         mount_pos = self.get_world_position(player)
+
+        # Find nearest enemy FROM THIS WEAPON'S POSITION
         nearest_enemy_pos = None
         if enemies and hasattr(self.weapon, "auto_aim") and self.weapon.auto_aim:
             nearest_enemy_pos = self._find_nearest_enemy(mount_pos, enemies)
+
+        # Update weapon rotation
         if hasattr(self.weapon, "auto_aim") and self.weapon.auto_aim:
-            # Auto-aim: Rotate toward nearest enemy ✅
             if nearest_enemy_pos:
                 delta_x = nearest_enemy_pos.x - mount_pos.x
                 delta_y = nearest_enemy_pos.y - mount_pos.y
-
                 angle_rad = math.atan2(delta_y, delta_x)
                 self.weapon_angle = math.degrees(angle_rad)
         else:
-            # Manual aim: Rotate toward mouse
             if mouse_world_pos:
                 delta_x = mouse_world_pos.x - mount_pos.x
                 delta_y = mouse_world_pos.y - mount_pos.y
-
                 angle_rad = math.atan2(delta_y, delta_x)
                 self.weapon_angle = math.degrees(angle_rad)
 
-        # Rotate weapon sprite (for both auto and manual) ✅
-        if self.weapon_sprite:
-            self.rendered_weapon = pygame.transform.rotate(
-                self.weapon_sprite, -self.weapon_angle
-            )
+        # Choose sprite: animation frame or base sprite ✅
+        current_sprite = self.weapon_sprite
+        if self.weapon_animation and self.weapon_animation.is_animating():
+            current_sprite = self.weapon_animation.get_current_frame()
+
+            # ✅ Choose sprite: animation or base
+            current_sprite = self.weapon_sprite
+            if self.weapon_animation and self.weapon_animation.is_animating():
+                current_sprite = self.weapon_animation.get_current_frame()
+
+        # Rotate weapon sprite
+        self.rendered_weapon = pygame.transform.rotate(
+            current_sprite, -self.weapon_angle
+        )
 
         # Update weapon with slot-specific weapon tip position
         weapon_tip = self.get_weapon_tip_position(player)
 
-        # Call weapon's update with weapon tip position
+        # Track if weapon fired this frame
+        # was_ready = self.weapon.cooldown_timer <= 0
+
+        # Call weapon's update
         self.weapon.update_from_slot(
             dt, player, enemies, projectiles, mouse_world_pos, weapon_tip
         )
+        # ✅ Trigger animation if fired
+        """if was_ready and self.weapon.cooldown_timer > 0:
+            if self.weapon_animation:
+                self.weapon_animation.start()
+        # If weapon just fired, trigger animation ✅
+        is_ready_now = self.weapon.cooldown_timer > 0
+        if was_ready and is_ready_now:
+            self.trigger_fire_animation()"""
 
     def render(self, screen, camera):
         """
@@ -179,3 +213,8 @@ class WeaponSlot:
                 nearest_enemy = enemy
 
         return nearest_enemy.position if nearest_enemy else None
+
+    def trigger_fire_animation(self):
+        """Start fire animation"""
+        if self.weapon_animation:
+            self.weapon_animation.start()

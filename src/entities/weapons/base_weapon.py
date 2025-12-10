@@ -32,6 +32,29 @@ class BaseWeapon(ABC):
 
         # Internal state
         self.cooldown_timer = 0.0
+        self.on_fire_callback = None
+
+    def get_animation_sprite_path(self):
+        """
+        Get path to weapon fire animation sprite
+
+        Override in subclasses to provide weapon-specific animations
+
+        Returns:
+            str: Path to animation sprite, or None for no animation
+        """
+        return "src/assets/sprites/weapon_basic_firing.png"  # Default
+
+    def get_animation_config(self):
+        """
+        Get animation configuration
+
+        Override in subclasses for different frame counts/sizes
+
+        Returns:
+            dict: Animation config with frame_width, frame_height, frame_count
+        """
+        return {"frame_width": 32, "frame_height": 16, "frame_count": 3}
 
     def update_from_slot(
         self, dt, player, enemies, projectiles, mouse_world_pos, weapon_tip
@@ -81,6 +104,8 @@ class BaseWeapon(ABC):
 
         if target:
             self.fire_from_position(weapon_tip, target.position, projectiles)
+            if self.on_fire_callback:
+                self.on_fire_callback()
             return True
 
         return False
@@ -98,6 +123,8 @@ class BaseWeapon(ABC):
         Returns:
             bool: True if fired
         """
+        if self.on_fire_callback:
+            self.on_fire_callback()
         self.fire_from_position(weapon_tip, mouse_world_pos, projectiles)
         return True
 
@@ -149,3 +176,7 @@ class BaseWeapon(ABC):
                 closest_enemy = enemy
 
         return closest_enemy
+
+    def set_fire_callback(self, callback):
+        """Set callback to be called when weapon fires"""
+        self.on_fire_callback = callback
