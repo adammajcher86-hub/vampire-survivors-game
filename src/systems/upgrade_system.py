@@ -5,7 +5,7 @@ Manages available upgrades and generates choices for level-up
 
 import random
 from src.upgrades import WeaponLevelUpgrade, StatUpgrade, NewWeaponUpgrade
-from src.entities.weapons import BasicWeapon, SpreadWeapon
+from src.entities.weapons import BasicWeapon, SpreadWeapon, LaserWeapon
 
 
 class UpgradeSystem:
@@ -54,6 +54,7 @@ class UpgradeSystem:
             NewWeaponUpgrade(BasicWeapon, "Basic Weapon")  # Can add multiple!
         )
         self.available_upgrades.append(NewWeaponUpgrade(SpreadWeapon, "Spread Shot"))
+        self.available_upgrades.append(NewWeaponUpgrade(LaserWeapon, "Laser Weapon"))
 
     def generate_choices(self, player, num_choices=3):
         """

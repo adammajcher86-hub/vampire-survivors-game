@@ -114,7 +114,6 @@ class EnemySpawner:
             player_position: Player position for spawn location
             enemies: Sprite group to add enemy to
         """
-        from src.entities.enemies import BasicEnemy, FastEnemy, TankEnemy, EliteEnemy
 
         # Map enemy type names to classes
         enemy_classes = {

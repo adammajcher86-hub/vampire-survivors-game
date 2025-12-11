@@ -74,6 +74,8 @@ class Game:
         print("Controls: WASD or Arrow Keys to move, ESC to pause")
         print("Starting weapon: Basic Weapon (auto-aim)")
         print("Collect XP to level up!")
+        self.last_debug_time = 0
+        self.DEBUG_INTERVAL = 2000
 
     def handle_event(self, event):
         """Handle game events"""
@@ -120,6 +122,11 @@ class Game:
                 self.paused = not self.paused
                 print(f"Game {'paused' if self.paused else 'resumed'}")
 
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_debug_time >= self.DEBUG_INTERVAL:
+            print("Debug info")
+            self.last_debug_time = current_time
+
     def update(self, dt):
         """Update game state"""
         if self.paused or self.game_over:
@@ -154,7 +161,18 @@ class Game:
                     self.projectiles,
                     self.mouse_world_pos,
                 )
+                if hasattr(slot.weapon, "update_beams"):
+                    slot.weapon.update_beams(dt)
 
+                    # ✅ Apply laser damage
+                if hasattr(slot.weapon, "get_pending_damage"):
+                    for damage_event in slot.weapon.get_pending_damage():
+                        self._apply_laser_damage(damage_event)
+        """for enemy in list(self.enemies):
+            if enemy.health <= 0:
+                if hasattr(self, '_spawn_xp_at_position') and hasattr(enemy, 'xp_value'):
+                    self._spawn_xp_at_position(enemy.position, enemy.xp_value)
+                enemy.kill()"""
         # Update camera to follow player
         self.camera.update(self.player)
 
@@ -337,6 +355,10 @@ class Game:
 
         # Draw crosshair (if has spread weapon)
         self._render_crosshair()
+
+        for slot in self.player.weapon_slots:
+            if not slot.is_empty() and hasattr(slot.weapon, "render_beams"):
+                slot.weapon.render_beams(self.screen, self.camera)
 
     def _draw_grid(self):
         """Draw background grid"""
@@ -830,3 +852,45 @@ class Game:
                 from src.logger import logger
 
                 logger.info("💥 FastEnemy EXPLODED! 8 lasers fired!")
+
+    def _apply_laser_damage(self, damage_event):
+        """Apply damage from laser to all targets"""
+        targets = damage_event.get("targets", [])
+        damage = damage_event["damage"]
+
+        for target_pos in targets:
+            for enemy in list(self.enemies):  # ✅ Use list() copy
+                if enemy.position.distance_to(target_pos) < 30:
+                    enemy.take_damage(damage)
+
+                    # ✅ CRITICAL: Check and remove dead enemies
+                    if enemy.health <= 0:
+                        # Spawn XP
+                        # if hasattr(self, '_spawn_xp_at_position') and hasattr(enemy, 'xp_value'):
+                        self._handle_enemy_death(enemy)
+
+                        # Remove from game
+                        # enemy.kill()
+
+                        from src.logger import logger
+
+                        logger.info(f"💀 {enemy.__class__.__name__} killed by laser!")
+
+                    break  # Only hit one enemy per target position
+
+    def _handle_enemy_death(self, enemy):
+        """
+        Handle enemy death - spawn drops and remove enemy
+
+        Args:
+            enemy: Enemy that died
+        """
+        # ✅ Use your existing PickupManager!
+        self.pickup_manager.spawn_from_enemy(enemy, self.pickups)
+
+        # Remove enemy from game
+        enemy.kill()
+
+        # Increment kill counter
+        if hasattr(self, "enemies_killed"):
+            self.enemies_killed += 1
