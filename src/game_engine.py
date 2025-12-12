@@ -16,6 +16,7 @@ from src.config.enemies.tank_laser import TankLaserConfig
 from src.config.enemies.fast_laser import FastLaserConfig
 from src.rendering import GameRenderer
 from src.systems.effects import EffectManager
+from src.systems.input import InputHandler
 
 
 class Game:
@@ -30,12 +31,13 @@ class Game:
         # Game time tracking
         self.game_time = 0.0
 
-        # ✅ Initialize renderer EARLY
+        # Initialize renderer EARLY
         self.renderer = GameRenderer(screen)
 
-        # ✅ Initialize effect manager
+        # Initialize effect manager
         self.effect_manager = EffectManager()
 
+        self.input_handler = InputHandler()
         # Initialize camera
         self.camera = Camera(WindowConfig.WIDTH, WindowConfig.HEIGHT)
 
@@ -96,9 +98,13 @@ class Game:
     def handle_event(self, event):
         """Handle game events"""
 
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 3:  # Right click
-                self.player.place_bomb(self.bombs)
+        # Pause toggle (keep in event loop for immediate response)
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                if not self.game_over and not self.upgrade_menu.active:
+                    self.paused = not self.paused
+                    logger.info(f"Game {'paused' if self.paused else 'resumed'}")
+                    return
 
         # Handle game over input
         if self.game_over:
@@ -117,40 +123,6 @@ class Game:
                 self._apply_upgrade(selected_index)
                 return
 
-        # Normal game input
-        if event.type == pygame.KEYDOWN:
-            # Dash with Spacebar
-            if event.key == pygame.K_SPACE:
-                keys = pygame.key.get_pressed()
-                dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (
-                    keys[pygame.K_a] or keys[pygame.K_LEFT]
-                )
-                dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (
-                    keys[pygame.K_w] or keys[pygame.K_UP]
-                )
-                self.player.try_dash(dx, dy)
-
-            # Pause
-            if event.key == pygame.K_ESCAPE:
-                self.paused = not self.paused
-                logger.info(f"Game {'paused' if self.paused else 'resumed'}")
-
-            # Debug mode toggle
-            if event.key == pygame.K_F3:
-                self.debug_mode = not self.debug_mode
-                logger.info(f"Debug mode: {'ON' if self.debug_mode else 'OFF'}")
-
-        # Debug logging
-        current_time = pygame.time.get_ticks()
-        if current_time - self.last_debug_time >= self.DEBUG_INTERVAL:
-            logger.debug(
-                f"Entities - Enemies: {len(self.enemies)}, "
-                f"Projectiles: {len(self.projectiles)}, "
-                f"Enemy Projectiles: {len(self.enemy_projectiles)}, "
-                f"Pickups: {len(self.pickups)}"
-            )
-            self.last_debug_time = current_time
-
     def update(self, dt):
         """Update game state"""
         if self.paused or self.game_over:
@@ -158,26 +130,33 @@ class Game:
 
         self.game_time += dt
 
-        # Update mouse positions
-        self.mouse_screen_pos = pygame.math.Vector2(pygame.mouse.get_pos())
-        self.mouse_world_pos = pygame.math.Vector2(
-            self.mouse_screen_pos.x + self.camera.offset.x,
-            self.mouse_screen_pos.y + self.camera.offset.y,
-        )
+        # UPDATE INPUT FIRST (replaces old mouse + keyboard code)
+        self.input_handler.update(self.camera.offset)
 
-        # Get player input
-        keys = pygame.key.get_pressed()
-        dx = (keys[pygame.K_d] or keys[pygame.K_RIGHT]) - (
-            keys[pygame.K_a] or keys[pygame.K_LEFT]
-        )
-        dy = (keys[pygame.K_s] or keys[pygame.K_DOWN]) - (
-            keys[pygame.K_w] or keys[pygame.K_UP]
-        )
+        # Get input from handler
+        self.mouse_screen_pos = self.input_handler.get_mouse_screen_pos()
+        self.mouse_world_pos = self.input_handler.get_mouse_world_pos()
+        dx, dy = self.input_handler.get_movement_vector()
+
+        # HANDLE ACTIONS (before player update)
+
+        # Dash action
+        if self.input_handler.dash_pressed():
+            self.player.try_dash(dx, dy)
+
+        # Bomb action
+        if self.input_handler.bomb_pressed():
+            self.player.place_bomb(self.bombs)
+
+        # Debug toggle
+        if self.input_handler.debug_toggle_pressed():
+            self.debug_mode = not self.debug_mode
+            logger.info(f"Debug mode: {'ON' if self.debug_mode else 'OFF'}")
 
         # Update player
         self.player.update(dt, dx, dy, self.mouse_world_pos)
 
-        # ✅ Update all weapon slots with CUMULATIVE tracking
+        # Update all weapon slots
         for slot_index, slot in enumerate(self.player.weapon_slots):
             if not slot.is_empty():
                 # Update weapon
@@ -200,10 +179,10 @@ class Game:
                     for damage_event in damage_events:
                         self._apply_laser_damage(damage_event)
 
-        # ✅ Update effects (particles, screen shake)
+        # Update effects (particles, screen shake)
         self.effect_manager.update(dt)
 
-        # ✅ Update camera with screen shake
+        # Update camera with screen shake
         shake_offset = self.effect_manager.get_shake_offset()
         self.camera.update(self.player, shake_offset)
 
@@ -266,6 +245,17 @@ class Game:
                 self.effect_manager.level_up(self.player.position)
                 self._show_upgrade_menu()
 
+        # OPTIONAL: Debug logging
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_debug_time >= self.DEBUG_INTERVAL:
+            logger.debug(
+                f"Entities - Enemies: {len(self.enemies)}, "
+                f"Projectiles: {len(self.projectiles)}, "
+                f"Enemy Projectiles: {len(self.enemy_projectiles)}, "
+                f"Pickups: {len(self.pickups)}"
+            )
+            self.last_debug_time = current_time
+
         # Check game over
         if self.player.health <= 0:
             self.game_over = True
@@ -281,7 +271,7 @@ class Game:
             hit_enemies = pygame.sprite.spritecollide(projectile, self.enemies, False)
 
             for enemy in hit_enemies:
-                # ✅ Hit effect
+                # Hit effect
                 direction = (
                     projectile.velocity.normalize()
                     if projectile.velocity.length() > 0
@@ -331,7 +321,7 @@ class Game:
             if projectile.collides_with(self.player):
                 # Use projectile damage method (has immunity)
                 if self.player.take_projectile_damage(projectile.damage):
-                    # ✅ Player damage effect
+                    # Player damage effect
                     self.effect_manager.player_damage()
                     logger.info(f"⚡ Player hit by laser! -{projectile.damage} HP")
 
@@ -345,7 +335,7 @@ class Game:
             if hasattr(enemy, "should_explode") and enemy.should_explode():
                 explosion_pos = enemy.get_explosion_position()
 
-                # ✅ Explosion effect (smaller than bomb)
+                # Explosion effect (smaller than bomb)
                 self.effect_manager.particle_system.emit_explosion(
                     explosion_pos.x,
                     explosion_pos.y,
@@ -387,7 +377,7 @@ class Game:
         """Check for bomb explosions and apply area damage"""
         for bomb in list(self.bombs):
             if bomb.is_expired():
-                # ✅ Bomb explosion effect
+                # Bomb explosion effect
                 self.effect_manager.bomb_explosion(bomb.position)
 
                 # Apply area damage
@@ -433,7 +423,7 @@ class Game:
         Args:
             enemy: Enemy that died
         """
-        # ✅ Death effects (particles + screen shake)
+        # Death effects (particles + screen shake)
         self.effect_manager.enemy_death(enemy.position, enemy.__class__.__name__)
 
         # Spawn pickups
@@ -456,7 +446,7 @@ class Game:
 
             if distance < collision_distance:
                 if self.player.take_damage(enemy.contact_damage):
-                    # ✅ Player damage effect
+                    # Player damage effect
                     self.effect_manager.player_damage()
                     logger.info(
                         f"💥 Player hit by {enemy.__class__.__name__}! "
