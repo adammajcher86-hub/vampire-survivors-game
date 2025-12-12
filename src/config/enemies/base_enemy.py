@@ -12,7 +12,7 @@ class BaseEnemyConfig:
     # Stats
     SIZE = 24
     SPEED = 80
-    DAMAGE = 10
+    CONTACT_DAMAGE = 0.5
     HEALTH = 50
     XP_VALUE = 5
 

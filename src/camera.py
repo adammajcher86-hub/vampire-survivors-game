@@ -1,37 +1,67 @@
 """
-Camera System
-Handles camera positioning and smooth following
+Camera
+Follows player and handles screen shake
 """
 
 import pygame
-from src.config import GameConfig
 
 
 class Camera:
-    """Camera that smoothly follows the player"""
+    """Camera that follows an entity with screen shake support"""
 
     def __init__(self, width, height):
+        """
+        Initialize camera
+
+        Args:
+            width: Camera width (screen width)
+            height: Camera height (screen height)
+        """
         self.width = width
         self.height = height
         self.offset = pygame.math.Vector2(0, 0)
-        self.target = pygame.math.Vector2(0, 0)
+        self.shake_offset = (0, 0)
 
-    def update(self, player):
-        """Update camera to follow player"""
-        # Target position (center player on screen)
-        self.target.x = player.position.x - self.width // 2
-        self.target.y = player.position.y - self.height // 2
+    def update(self, target, shake_offset=(0, 0)):
+        """
+        Update camera to follow target with optional shake
 
-        # Smooth interpolation
-        self.offset.x += (self.target.x - self.offset.x) * GameConfig.CAMERA_SMOOTHING
-        self.offset.y += (self.target.y - self.offset.y) * GameConfig.CAMERA_SMOOTHING
+        Args:
+            target: Entity to follow (usually player)
+            shake_offset: (x, y) tuple for screen shake offset
+        """
+        # ✅ Store shake offset
+        self.shake_offset = shake_offset
 
-    def apply(self, position):
-        """Apply camera offset to a position"""
+        # Center camera on target
+        self.offset.x = target.position.x - self.width // 2
+        self.offset.y = target.position.y - self.height // 2
+
+    def apply(self, entity_position):
+        """
+        Convert world position to screen position with shake
+
+        Args:
+            entity_position: Vector2 world position
+
+        Returns:
+            Vector2: Screen position with shake applied
+        """
         return pygame.math.Vector2(
-            position.x - self.offset.x, position.y - self.offset.y
+            entity_position.x - self.offset.x + self.shake_offset[0],
+            entity_position.y - self.offset.y + self.shake_offset[1],
         )
 
-    def get_visible_rect(self):
-        """Get the rectangle of visible world space"""
-        return pygame.Rect(self.offset.x, self.offset.y, self.width, self.height)
+    def apply_rect(self, rect):
+        """
+        Apply camera offset to a rect
+
+        Args:
+            rect: pygame.Rect in world coordinates
+
+        Returns:
+            pygame.Rect: Rect in screen coordinates
+        """
+        return rect.move(
+            -self.offset.x + self.shake_offset[0], -self.offset.y + self.shake_offset[1]
+        )

@@ -27,7 +27,7 @@ class Enemy(pygame.sprite.Sprite):
         self.max_health = config.HEALTH
         self.health = self.max_health
         self.speed = config.SPEED
-        self.damage = config.DAMAGE
+        self.contact_damage = config.CONTACT_DAMAGE
         self.xp_value = config.XP_VALUE
 
         # Visual properties from config

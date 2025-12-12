@@ -9,6 +9,8 @@ from src.config import PlayerConfig
 from src.config.weapons.bomb import BombConfig
 from src.entities.projectiles import BombProjectile
 import random
+
+# from src.entities.weapons import LaserWeapon, SpreadWeapon
 from src.logger import logger
 from src.systems.weapon_slot import WeaponSlot
 from src.entities.weapons.basic_weapon import BasicWeapon
@@ -100,6 +102,8 @@ class Player(pygame.sprite.Sprite):
 
         # Start with one basic weapon in first slot
         self.add_weapon(BasicWeapon())
+        # self.add_weapon(LaserWeapon())
+        # self.add_weapon(SpreadWeapon())
 
     def get_weapon_tip_position(self):
         """
@@ -283,11 +287,15 @@ class Player(pygame.sprite.Sprite):
                 weapon_screen_pos = camera.apply(weapon_pos)
                 weapon_rect = slot.rendered_weapon.get_rect(center=weapon_screen_pos)
                 screen.blit(slot.rendered_weapon, weapon_rect)
-        # DEBUG: Draw collision box (remove in production) 🔍
-        # player_screen = camera.apply(self.position)
-        # pygame.draw.circle(screen, (255, 0, 0),
-        #                   (int(player_screen.x), int(player_screen.y)),
-        #                  self.radius, 2)
+        # Draw collision box (remove in production) 🔍
+        player_screen = camera.apply(self.position)
+        pygame.draw.circle(
+            screen,
+            (255, 0, 0),
+            (int(player_screen.x), int(player_screen.y)),
+            self.radius,
+            2,
+        )
 
     def try_dash(self, dx, dy):
         """

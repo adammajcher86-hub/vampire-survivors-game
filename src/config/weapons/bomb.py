@@ -16,7 +16,7 @@ class BombConfig:
     PLAYER_DAMAGE = 40  # damage to player if caught in blast
 
     # Starting inventory
-    STARTING_BOMBS = 3  # bombs player starts with
+    STARTING_BOMBS = 10  # bombs player starts with
     MAX_BOMBS = 10  # maximum bombs player can carry
 
     # Visual

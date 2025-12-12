@@ -10,7 +10,7 @@ class FastEnemyConfig:
     # Stats
     HEALTH = 5
     SPEED = 120  # Fast movement
-    DAMAGE = 3
+    CONTACT_DAMAGE = 3
     SIZE = 15
     XP_VALUE = 2
     COLOR = (255, 200, 100)  # Orange
