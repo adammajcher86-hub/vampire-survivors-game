@@ -23,7 +23,8 @@ class Player(pygame.sprite.Sprite):
         super().__init__()
         self.position = pygame.math.Vector2(x, y)
         self.velocity = pygame.math.Vector2(0, 0)
-
+        self.last_hit_time = 0  # Timestamp of last hit
+        self.hit_cooldown = 500  # Can only take contact damage every 0.5 seconds
         # Stats
         self.max_health = PlayerConfig.MAX_HEALTH
         self.health = self.max_health

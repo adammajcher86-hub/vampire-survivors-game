@@ -62,7 +62,8 @@ class GameRenderer:
         self.render_effects(game_state, camera)
         self._render_crosshair(mouse_screen_pos)
         self.render_ui(game_state)
-
+        #if game_state.debug_mode:
+        self.render_debug_collision_grid(game_state.collision_manager)
         # Flip display
         # pygame.display.flip()
 
@@ -508,3 +509,24 @@ class GameRenderer:
                     8,
                     2,
                 )
+
+    def render_debug_collision_grid(self, collision_manager):
+        """Render collision grid for debugging"""
+
+        info = collision_manager.get_debug_info()
+
+        # Draw info on screen
+        debug_text = [
+            f"Grid Cells: {info['grid_cells']}",
+            f"Entities: {info['entities_in_grid']}",
+            f"Avg/Cell: {info['avg_per_cell']:.1f}",
+            f"Projectile Hits: {info['projectile_hits']}",
+            f"Enemy Projectile Hits: {info['enemy_projectile_hits']}",
+            f"Player Collisions: {info['player_collisions']}",
+        ]
+
+        y_offset = 200
+        for line in debug_text:
+            text_surface = self.font.render(line, True, (255, 255, 0))
+            self.screen.blit(text_surface, (10, y_offset))
+            y_offset += 20

@@ -11,12 +11,13 @@ from src.camera import Camera
 from src.logger import logger
 from src.systems import EnemySpawner, XPSystem, UpgradeSystem, PickupManager, WaveSystem
 from src.ui import UpgradeMenu
-from src.entities.projectiles import BombProjectile, LaserProjectile
+from src.entities.projectiles import LaserProjectile
 from src.config.enemies.tank_laser import TankLaserConfig
 from src.config.enemies.fast_laser import FastLaserConfig
 from src.rendering import GameRenderer
 from src.systems.effects import EffectManager
 from src.systems.input import InputHandler
+from src.systems.collision import CollisionManager
 
 
 class Game:
@@ -40,6 +41,8 @@ class Game:
         self.input_handler = InputHandler()
         # Initialize camera
         self.camera = Camera(WindowConfig.WIDTH, WindowConfig.HEIGHT)
+        # Initialize collision manager
+        self.collision_manager = CollisionManager(cell_size=100)
 
         # Initialize player at center of screen
         self.player = Player(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2)
@@ -218,11 +221,7 @@ class Game:
             pickup.update(dt, self.player)
 
         # Check bomb explosions
-        self._check_bomb_explosions()
-
-        # Check collisions
-        self._check_projectile_collisions()
-        self._check_enemy_projectile_collisions()
+        self._handle_collisions()
 
         # Remove expired projectiles
         for projectile in list(self.projectiles):
@@ -232,9 +231,6 @@ class Game:
         for projectile in list(self.enemy_projectiles):
             if projectile.is_expired():
                 self.enemy_projectiles.remove(projectile)
-
-        # Check player-enemy collisions
-        self._check_player_enemy_collisions()
 
         # Handle pickup collection
         collected_xp = self.pickup_manager.collect_pickups(self.player, self.pickups)
@@ -261,35 +257,6 @@ class Game:
             self.game_over = True
             logger.info("💀 GAME OVER!")
 
-    def _check_projectile_collisions(self):
-        """Check player projectile-enemy collisions"""
-        for projectile in list(self.projectiles):
-            # Special handling for bombs (area damage)
-            if isinstance(projectile, BombProjectile):
-                continue
-
-            hit_enemies = pygame.sprite.spritecollide(projectile, self.enemies, False)
-
-            for enemy in hit_enemies:
-                # Hit effect
-                direction = (
-                    projectile.velocity.normalize()
-                    if projectile.velocity.length() > 0
-                    else pygame.math.Vector2(1, 0)
-                )
-                self.effect_manager.projectile_hit(enemy.position, direction)
-
-                # Apply damage
-                enemy.take_damage(projectile.damage)
-                self.projectiles.remove(projectile)
-
-                # Check if enemy died
-                if enemy.health <= 0:
-                    self._handle_enemy_death(enemy)
-                    self.wave_system.on_enemy_killed()
-
-                break  # Projectile hits only one enemy
-
     def _check_enemy_shooting(self):
         """Check for enemies ready to shoot and spawn projectiles"""
         for enemy in self.enemies:
@@ -314,19 +281,79 @@ class Game:
 
                 logger.debug("💥 Tank fired laser!")
 
-    def _check_enemy_projectile_collisions(self):
-        """Check collisions between enemy projectiles and player"""
-        for projectile in list(self.enemy_projectiles):
-            # Check if laser hits player
-            if projectile.collides_with(self.player):
-                # Use projectile damage method (has immunity)
-                if self.player.take_projectile_damage(projectile.damage):
-                    # Player damage effect
-                    self.effect_manager.player_damage()
-                    logger.info(f"⚡ Player hit by laser! -{projectile.damage} HP")
+    def _handle_collisions(self):
+        """Handle all collision detection and responses"""
 
-                # Remove projectile
+        # Run all collision checks at once
+        self.collision_manager.check_all(
+            self.player,
+            self.enemies,
+            self.projectiles,
+            self.enemy_projectiles,
+            self.bombs,
+            self.pickups,
+        )
+
+        # ==================== PROJECTILE HITS ====================
+        for projectile, enemy in self.collision_manager.get_projectile_hits():
+            # Apply damage
+            enemy.take_damage(projectile.damage)
+
+            # Projectile hit effect
+            direction = (enemy.position - projectile.position).normalize()
+            self.effect_manager.projectile_hit(enemy.position, direction)
+
+            # Remove projectile directly (no expire method)
+            if projectile in self.projectiles:
+                self.projectiles.remove(projectile)
+
+            # Check if enemy died
+            if enemy.health <= 0:
+                self._handle_enemy_death(enemy)
+                self.wave_system.on_enemy_killed()
+
+        # ==================== ENEMY PROJECTILE HITS ====================
+        for projectile in self.collision_manager.get_enemy_projectile_hits():
+            # Apply damage to player
+            damage = getattr(projectile, "damage", 10)
+            self.player.take_damage(damage)
+
+            # Player damage effect
+            self.effect_manager.player_damage()
+
+            # Remove enemy projectile directly
+            if projectile in self.enemy_projectiles:
                 self.enemy_projectiles.remove(projectile)
+
+        # ==================== PLAYER-ENEMY COLLISIONS ====================
+        for enemy in self.collision_manager.get_player_enemy_collisions():
+            # Check if player can take contact damage (cooldown)
+            current_time = pygame.time.get_ticks()
+            if current_time - self.player.last_hit_time >= self.player.hit_cooldown:
+                # Apply contact damage
+                damage = getattr(enemy, "damage", 10)
+                self.player.take_damage(damage)
+                self.player.last_hit_time = current_time
+
+                # Damage effect
+                self.effect_manager.player_damage()
+
+        # ==================== BOMB EXPLOSIONS ====================
+        for bomb, hit_enemies in self.collision_manager.get_bomb_hits():
+            # Remove bomb
+            if bomb in self.bombs:
+                self.bombs.remove(bomb)
+
+            # Explosion effect
+            self.effect_manager.bomb_explosion(bomb.position)
+
+            # Damage all enemies in range
+            for enemy in hit_enemies:
+                enemy.take_damage(bomb.damage)
+
+                if enemy.health <= 0:
+                    self._handle_enemy_death(enemy)
+                    self.wave_system.on_enemy_killed()
 
     def _check_fast_enemy_explosions(self):
         """Check for FastEnemy explosions and spawn radial lasers"""
@@ -373,27 +400,6 @@ class Game:
 
                 logger.info("💥 FastEnemy EXPLODED! 8 lasers fired!")
 
-    def _check_bomb_explosions(self):
-        """Check for bomb explosions and apply area damage"""
-        for bomb in list(self.bombs):
-            if bomb.is_expired():
-                # Bomb explosion effect
-                self.effect_manager.bomb_explosion(bomb.position)
-
-                # Apply area damage
-                for enemy in self.enemies:
-                    distance = enemy.position.distance_to(bomb.position)
-                    if distance <= bomb.explosion_radius:
-                        enemy.take_damage(bomb.damage)
-
-                        if enemy.health <= 0:
-                            self._handle_enemy_death(enemy)
-                            self.wave_system.on_enemy_killed()
-
-                # Remove bomb
-                self.bombs.remove(bomb)
-                logger.info(f"💣 Bomb exploded! Radius: {bomb.explosion_radius}")
-
     def _apply_laser_damage(self, damage_event):
         """Apply damage from laser to all targets"""
         targets = damage_event.get("targets", [])
@@ -434,24 +440,6 @@ class Game:
 
         # Increment kill counter
         self.enemies_killed += 1
-
-    def _check_player_enemy_collisions(self):
-        """Check player-enemy collisions"""
-        if self.player.is_dashing:
-            return  # No damage during dash
-
-        for enemy in self.enemies:
-            distance = self.player.position.distance_to(enemy.position)
-            collision_distance = self.player.radius + enemy.radius
-
-            if distance < collision_distance:
-                if self.player.take_damage(enemy.contact_damage):
-                    # Player damage effect
-                    self.effect_manager.player_damage()
-                    logger.info(
-                        f"💥 Player hit by {enemy.__class__.__name__}! "
-                        f"-{enemy.contact_damage} HP"
-                    )
 
     def _show_upgrade_menu(self):
         """Show upgrade menu with choices"""
@@ -498,3 +486,5 @@ class Game:
         self.__init__(self.screen)
         self.paused = False
         logger.info("🔄 Game restarted!")
+
+
