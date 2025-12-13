@@ -62,7 +62,7 @@ class GameRenderer:
         self.render_effects(game_state, camera)
         self._render_crosshair(mouse_screen_pos)
         self.render_ui(game_state)
-        #if game_state.debug_mode:
+        # if game_state.debug_mode:
         self.render_debug_collision_grid(game_state.collision_manager)
         # Flip display
         # pygame.display.flip()

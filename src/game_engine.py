@@ -18,6 +18,8 @@ from src.rendering import GameRenderer
 from src.systems.effects import EffectManager
 from src.systems.input import InputHandler
 from src.systems.collision import CollisionManager
+from src.game_event_handler import GameEventHandler
+from src.systems.events import get_event_bus, GameEvent
 
 
 class Game:
@@ -43,7 +45,9 @@ class Game:
         self.camera = Camera(WindowConfig.WIDTH, WindowConfig.HEIGHT)
         # Initialize collision manager
         self.collision_manager = CollisionManager(cell_size=100)
-
+        # Initialize event bus
+        self.event_bus = get_event_bus()
+        self.event_bus.reset()
         # Initialize player at center of screen
         self.player = Player(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2)
 
@@ -97,6 +101,7 @@ class Game:
         print("Starting weapon: Basic Weapon (auto-aim)")
         print("Collect XP to level up!")
         self.last_debug_time = 0
+        self.event_handler = GameEventHandler(self)
 
     def handle_event(self, event):
         """Handle game events"""
@@ -133,7 +138,7 @@ class Game:
 
         self.game_time += dt
 
-        # UPDATE INPUT FIRST (replaces old mouse + keyboard code)
+        # UPDATE INPUT FIRST
         self.input_handler.update(self.camera.offset)
 
         # Get input from handler
@@ -235,11 +240,21 @@ class Game:
         # Handle pickup collection
         collected_xp = self.pickup_manager.collect_pickups(self.player, self.pickups)
         if collected_xp > 0:
-            self.xp_collected += collected_xp
+            # EMIT XP GAINED EVENT
+            self.event_bus.emit(
+                GameEvent.XP_GAINED,
+                amount=collected_xp,
+                total_collected=self.xp_collected + collected_xp,
+            )
+
             if self.xp_system.update(dt, collected_xp):
-                # Level up effect
-                self.effect_manager.level_up(self.player.position)
-                self._show_upgrade_menu()
+                # EMIT LEVEL UP EVENT
+                self.event_bus.emit(
+                    GameEvent.LEVEL_UP,
+                    new_level=self.xp_system.current_level,
+                    xp_required=self.xp_system.xp_to_next_level,
+                    player=self.player,
+                )
 
         # OPTIONAL: Debug logging
         current_time = pygame.time.get_ticks()
@@ -299,11 +314,16 @@ class Game:
             # Apply damage
             enemy.take_damage(projectile.damage)
 
-            # Projectile hit effect
-            direction = (enemy.position - projectile.position).normalize()
-            self.effect_manager.projectile_hit(enemy.position, direction)
+            # EMIT EVENT
+            self.event_bus.emit(
+                GameEvent.PROJECTILE_HIT,
+                projectile=projectile,
+                enemy=enemy,
+                position=enemy.position.copy(),
+                damage=projectile.damage,
+            )
 
-            # Remove projectile directly (no expire method)
+            # Remove projectile directly
             if projectile in self.projectiles:
                 self.projectiles.remove(projectile)
 
@@ -318,14 +338,24 @@ class Game:
             damage = getattr(projectile, "damage", 10)
             self.player.take_damage(damage)
 
-            # Player damage effect
-            self.effect_manager.player_damage()
+            # EMIT EVENT
+            self.event_bus.emit(
+                GameEvent.PLAYER_DAMAGED,
+                damage=damage,
+                source=projectile,
+                position=self.player.position.copy(),
+            )
 
             # Remove enemy projectile directly
             if projectile in self.enemy_projectiles:
                 self.enemy_projectiles.remove(projectile)
 
         # ==================== PLAYER-ENEMY COLLISIONS ====================
+        if not hasattr(self.player, "last_hit_time"):
+            self.player.last_hit_time = 0
+        if not hasattr(self.player, "hit_cooldown"):
+            self.player.hit_cooldown = 500
+
         for enemy in self.collision_manager.get_player_enemy_collisions():
             # Check if player can take contact damage (cooldown)
             current_time = pygame.time.get_ticks()
@@ -335,8 +365,13 @@ class Game:
                 self.player.take_damage(damage)
                 self.player.last_hit_time = current_time
 
-                # Damage effect
-                self.effect_manager.player_damage()
+                # EMIT EVENT
+                self.event_bus.emit(
+                    GameEvent.PLAYER_DAMAGED,
+                    damage=damage,
+                    source=enemy,
+                    position=self.player.position.copy(),
+                )
 
         # ==================== BOMB EXPLOSIONS ====================
         for bomb, hit_enemies in self.collision_manager.get_bomb_hits():
@@ -344,8 +379,13 @@ class Game:
             if bomb in self.bombs:
                 self.bombs.remove(bomb)
 
-            # Explosion effect
-            self.effect_manager.bomb_explosion(bomb.position)
+            # EMIT EVENT
+            self.event_bus.emit(
+                GameEvent.BOMB_EXPLODED,
+                position=bomb.position.copy(),
+                enemies_hit=len(hit_enemies),
+                damage=bomb.damage,
+            )
 
             # Damage all enemies in range
             for enemy in hit_enemies:
@@ -424,22 +464,24 @@ class Game:
 
     def _handle_enemy_death(self, enemy):
         """
-        Handle enemy death - spawn drops and effects
+        Handle enemy death - emit event and spawn drops
 
         Args:
             enemy: Enemy that died
         """
-        # Death effects (particles + screen shake)
-        self.effect_manager.enemy_death(enemy.position, enemy.__class__.__name__)
+        # let systems react
+        self.event_bus.emit(
+            GameEvent.ENEMY_KILLED,
+            enemy=enemy,
+            enemy_type=enemy.__class__.__name__,
+            position=enemy.position.copy(),
+        )
 
         # Spawn pickups
         self.pickup_manager.spawn_from_enemy(enemy, self.pickups)
 
         # Remove enemy from game
         enemy.kill()
-
-        # Increment kill counter
-        self.enemies_killed += 1
 
     def _show_upgrade_menu(self):
         """Show upgrade menu with choices"""
@@ -486,5 +528,3 @@ class Game:
         self.__init__(self.screen)
         self.paused = False
         logger.info("🔄 Game restarted!")
-
-
