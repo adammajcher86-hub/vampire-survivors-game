@@ -6,7 +6,7 @@ Manages game state, entities, and systems
 import pygame
 import math
 from src.config import WindowConfig, FastEnemyConfig
-from src.entities import Player, BasicWeapon
+from src.entities import Player
 from src.camera import Camera
 from src.logger import logger
 from src.systems import EnemySpawner, XPSystem, UpgradeSystem, PickupManager, WaveSystem
@@ -20,6 +20,8 @@ from src.systems.input import InputHandler
 from src.systems.collision import CollisionManager
 from src.game_event_handler import GameEventHandler
 from src.systems.events import get_event_bus, GameEvent
+from src.weapon_registry import register_all_weapons
+from src.factories import create_starter_weapon
 
 
 class Game:
@@ -48,9 +50,12 @@ class Game:
         # Initialize event bus
         self.event_bus = get_event_bus()
         self.event_bus.reset()
+
+        register_all_weapons()
         # Initialize player at center of screen
         self.player = Player(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2)
-
+        starter_weapon = create_starter_weapon("laser")
+        self.player.add_weapon(starter_weapon)
         # Entity groups
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
@@ -60,7 +65,7 @@ class Game:
         self.enemy_spawner = EnemySpawner()
 
         # Weapon system - POLYMORPHIC LIST!
-        self.weapons = [BasicWeapon()]  # Start with basic weapon
+        # self.weapons = [BasicWeapon()]  # Start with basic weapon
         self.projectiles = pygame.sprite.Group()
 
         # XP system

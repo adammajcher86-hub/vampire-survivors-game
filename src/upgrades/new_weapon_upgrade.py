@@ -4,17 +4,19 @@ Adds new weapon to player's weapon slots
 """
 
 from src.upgrades.base_upgrade import BaseUpgrade
+from src.factories import WeaponFactory
+from src.logger import logger
 
 
 class NewWeaponUpgrade(BaseUpgrade):
     """Add new weapon to player"""
 
-    def __init__(self, weapon_class, weapon_name):
+    def __init__(self, weapon_type, weapon_name):
         """
         Initialize new weapon upgrade
 
         Args:
-            weapon_class: Class of weapon to add (e.g., BasicWeapon)
+            weapon_type: Type of weapon to add (e.g., 'basic', 'laser', 'spread')
             weapon_name: Display name
         """
         super().__init__(
@@ -22,7 +24,7 @@ class NewWeaponUpgrade(BaseUpgrade):
             description=f"Add {weapon_name} to weapon slot",
             icon_text="⚔️",
         )
-        self.weapon_class = weapon_class
+        self.weapon_type = weapon_type
         self.weapon_name = weapon_name
 
     def can_apply(self, player):
@@ -30,12 +32,12 @@ class NewWeaponUpgrade(BaseUpgrade):
         return player.get_empty_slot_count() > 0
 
     def apply(self, player):
-        """Add weapon to empty slot"""
-        weapon = self.weapon_class()
+        """Add weapon to empty slot using factory"""
+
+        # Create level 1 weapon (clear and explicit)
+        weapon = WeaponFactory.create(self.weapon_type, level=1)
 
         if player.add_weapon(weapon):
-            from src.logger import logger
-
             logger.info(f"⚔️ Added {self.weapon_name} to weapon slot!")
             return True
 

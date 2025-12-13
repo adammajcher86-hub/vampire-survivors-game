@@ -6,18 +6,7 @@ Instant beam weapon with bouncing mechanic
 import pygame
 from src.entities.weapons.base_weapon import BaseWeapon
 from src.entities.beams.laser_beam import LaserBeam
-
-
-class LaserWeaponConfig:
-    """Laser weapon configuration"""
-
-    FIRE_COOLDOWN = 0.2  # Fires 5 times per second
-    DAMAGE = 1  # Damage per shot
-    RANGE = 500  # Max laser range
-    BOUNCE_RANGE = 300  # Max distance for bounce
-    BEAM_COLOR = (255, 50, 50)  # Red
-    BEAM_WIDTH = 2
-    BASE_BOUNCES = 2  # Default: hits 2 enemies (initial + 1 bounce)
+from src.config.weapons.laser_weapon import LaserWeaponConfig
 
 
 class LaserWeapon(BaseWeapon):

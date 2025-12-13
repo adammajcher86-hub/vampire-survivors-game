@@ -13,7 +13,6 @@ import random
 # from src.entities.weapons import LaserWeapon, SpreadWeapon
 from src.logger import logger
 from src.systems.weapon_slot import WeaponSlot
-from src.entities.weapons.basic_weapon import BasicWeapon
 
 
 class Player(pygame.sprite.Sprite):
@@ -102,7 +101,7 @@ class Player(pygame.sprite.Sprite):
         ).convert_alpha()
 
         # Start with one basic weapon in first slot
-        self.add_weapon(BasicWeapon())
+        # self.add_weapon(BasicWeapon())
         # self.add_weapon(LaserWeapon())
         # self.add_weapon(SpreadWeapon())
 
@@ -140,7 +139,7 @@ class Player(pygame.sprite.Sprite):
             if self.slow_timer <= 0:
                 self.is_slowed = False
                 self.slow_multiplier = 1.0
-                logger.info("✅ Slow effect ended!")
+                logger.info("Slow effect ended!")
 
         if self.damage_immunity:
             self.damage_immunity_timer -= dt
@@ -281,7 +280,7 @@ class Player(pygame.sprite.Sprite):
         body_rect = self.rendered_sprite.get_rect(center=camera.apply(self.position))
         screen.blit(self.rendered_sprite, body_rect)
 
-        # Render all equipped weapons ✅
+        # Render all equipped weapons
         for slot in self.weapon_slots:
             if not slot.is_empty() and slot.rendered_weapon:
                 weapon_pos = slot.get_world_position(self)
@@ -414,7 +413,7 @@ class Player(pygame.sprite.Sprite):
 
         # Decrease bomb count and start cooldown
         self.bomb_count -= 1
-        self.bomb_cooldown = BombConfig.PLACEMENT_COOLDOWN  # ✅ Start cooldown!
+        self.bomb_cooldown = BombConfig.PLACEMENT_COOLDOWN  # Start cooldown!
         logger.info(f"💣 Bomb placed! Remaining: {self.bomb_count}")
 
         return True

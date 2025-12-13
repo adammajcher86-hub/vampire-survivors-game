@@ -21,7 +21,7 @@ class BombConfig:
 
     # Visual
     BOMB_SIZE = 8  # bomb sprite radius
-    BOMB_COLOR = (50, 50, 50)  # dark gray
+    BOMB_COLOR = (150, 150, 150)
     WARNING_COLOR = (255, 0, 0)  # red
     PULSE_SPEED = 8.0  # warning circle pulse speed
 

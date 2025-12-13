@@ -5,7 +5,6 @@ Manages available upgrades and generates choices for level-up
 
 import random
 from src.upgrades import WeaponLevelUpgrade, StatUpgrade, NewWeaponUpgrade
-from src.entities.weapons import BasicWeapon, SpreadWeapon, LaserWeapon
 
 
 class UpgradeSystem:
@@ -50,11 +49,9 @@ class UpgradeSystem:
         )
 
         # Weapon upgrades
-        self.available_upgrades.append(
-            NewWeaponUpgrade(BasicWeapon, "Basic Weapon")  # Can add multiple!
-        )
-        self.available_upgrades.append(NewWeaponUpgrade(SpreadWeapon, "Spread Shot"))
-        self.available_upgrades.append(NewWeaponUpgrade(LaserWeapon, "Laser Weapon"))
+        self.available_upgrades.append(NewWeaponUpgrade("basic", "Basic Weapon"))
+        self.available_upgrades.append(NewWeaponUpgrade("spread", "Spread Shot"))
+        self.available_upgrades.append(NewWeaponUpgrade("laser", "Laser Weapon"))
 
     def generate_choices(self, player, num_choices=3):
         """
@@ -69,9 +66,7 @@ class UpgradeSystem:
         """
         # Filter to only upgrades that can be applied
         valid_upgrades = [
-            upgrade
-            for upgrade in self.available_upgrades
-            if upgrade.can_apply(player)  # ✅ Only pass player
+            upgrade for upgrade in self.available_upgrades if upgrade.can_apply(player)
         ]
 
         # If not enough valid upgrades, return what we have
@@ -92,4 +87,4 @@ class UpgradeSystem:
         Returns:
             str: Message describing what was upgraded
         """
-        return upgrade.apply(player)  # ✅ Only pass player
+        return upgrade.apply(player)
