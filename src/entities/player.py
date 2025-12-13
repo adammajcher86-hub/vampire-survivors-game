@@ -83,7 +83,7 @@ class Player(pygame.sprite.Sprite):
         self.rendered_sprite = self.base_sprite
         # Weapon mount position (offset from player center)
         self.weapon_mount_offset = pygame.math.Vector2(21, -18)
-        self.weapon_angle = 0  # ✅ Weapon rotation (separate from player)
+        self.weapon_angle = 0  # Weapon rotation (separate from player)
         self.rendered_weapon = self.weapon_sprite
 
         self.weapon_slots = [

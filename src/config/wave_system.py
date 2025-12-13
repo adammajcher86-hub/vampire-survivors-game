@@ -10,7 +10,7 @@ class WaveConfig:
     REST_DURATION = 5.0  # seconds between waves
 
     # Starting difficulty
-    BASE_ENEMIES = 10  # Wave 1 enemy count
+    BASE_ENEMIES = 11  # Wave 1 enemy count
     ENEMIES_PER_WAVE = 25  # Additional enemies each wave
     MAX_ENEMIES_PER_WAVE = 550  # Cap on enemies
 

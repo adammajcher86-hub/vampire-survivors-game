@@ -15,7 +15,7 @@ class BaseWeaponConfig:
 
     # Projectile properties
     PROJECTILE_SPEED = 300
-    PROJECTILE_DAMAGE = 25
+    PROJECTILE_DAMAGE = 20
     PROJECTILE_LIFETIME = 2.0  # Seconds
     PROJECTILE_SIZE = 8
     PROJECTILE_COLOR = Colors.YELLOW

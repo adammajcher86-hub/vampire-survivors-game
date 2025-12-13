@@ -8,7 +8,7 @@ class LaserWeaponConfig:
     """Player laser weapon configuration"""
 
     FIRE_COOLDOWN = 0.2  # Fires 5 times per second
-    DAMAGE = 2  # Damage per shot
+    DAMAGE = 1.5  # Damage per shot
     RANGE = 200  # Max laser range
     BOUNCE_RANGE = 130  # Max distance for bounce
     BEAM_COLOR = (255, 50, 50)  # Red
