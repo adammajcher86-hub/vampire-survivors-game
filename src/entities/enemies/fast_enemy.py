@@ -172,7 +172,7 @@ class FastEnemy(Enemy):
         self.dash_timer = FastEnemyConfig.DASH_DURATION
         self.dash_hit_player = False
 
-    def render(self, screen, camera):
+    def render(self, screen, camera, player_position):
         """Render fast enemy with blink effect"""
         if not self.visible:
             return

@@ -103,7 +103,7 @@ class TankEnemy(Enemy):
             TankLaserConfig.SHOOT_COOLDOWN_MIN, TankLaserConfig.SHOOT_COOLDOWN_MAX
         )
 
-    def render(self, screen, camera):
+    def render(self, screen, camera, player_position):
         """Render tank enemy with telegraph flash"""
         screen_pos = camera.apply(self.position)
 

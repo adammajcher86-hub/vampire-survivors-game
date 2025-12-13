@@ -157,7 +157,7 @@ class EliteEnemy(Enemy):
         self.dash_timer = self.dash_duration
         self.dash_hit_player = False
 
-    def render(self, screen, camera):
+    def render(self, screen, camera, player_position):
         """
         Render elite enemy with blink effect during telegraph
 

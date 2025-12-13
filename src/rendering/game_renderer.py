@@ -54,7 +54,7 @@ class GameRenderer:
         # Render in layers (bottom to top)
         self.render_background(game_state, camera)
         self.render_pickups(game_state.pickups, camera)
-        self.render_enemies(game_state.enemies, camera)
+        self.render_enemies(game_state.enemies, camera, game_state.player.position)
         self.render_player(game_state.player, camera)
         self.render_projectiles(game_state.projectiles, camera)
         self.render_enemy_projectiles(game_state.enemy_projectiles, camera)
@@ -116,10 +116,10 @@ class GameRenderer:
 
             pickup.render(self.screen, camera)
 
-    def render_enemies(self, enemies, camera):
+    def render_enemies(self, enemies, camera, player_position):
         """Render all enemies"""
         for enemy in enemies:
-            enemy.render(self.screen, camera)
+            enemy.render(self.screen, camera, player_position)
 
     def render_player(self, player, camera):
         """Render player"""

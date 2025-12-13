@@ -288,14 +288,14 @@ class Player(pygame.sprite.Sprite):
                 weapon_rect = slot.rendered_weapon.get_rect(center=weapon_screen_pos)
                 screen.blit(slot.rendered_weapon, weapon_rect)
         # Draw collision box (remove in production) 🔍
-        player_screen = camera.apply(self.position)
+        """player_screen = camera.apply(self.position)
         pygame.draw.circle(
             screen,
             (255, 0, 0),
             (int(player_screen.x), int(player_screen.y)),
             self.radius,
             2,
-        )
+        )"""
 
     def try_dash(self, dx, dy):
         """

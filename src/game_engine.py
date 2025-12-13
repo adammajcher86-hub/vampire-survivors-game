@@ -54,7 +54,7 @@ class Game:
         register_all_weapons()
         # Initialize player at center of screen
         self.player = Player(WindowConfig.WIDTH // 2, WindowConfig.HEIGHT // 2)
-        starter_weapon = create_starter_weapon("laser")
+        starter_weapon = create_starter_weapon("basic")
         self.player.add_weapon(starter_weapon)
         # Entity groups
         self.all_sprites = pygame.sprite.Group()
